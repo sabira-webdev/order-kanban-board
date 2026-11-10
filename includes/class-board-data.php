@@ -13,8 +13,19 @@ class Board_Data {
 
 	const COLUMNS    = array( 'wc-on-hold', 'wc-processing', 'wc-packing', 'wc-ready-to-ship', 'wc-completed' );
 	const PER_COLUMN = 20;
+	const MAX_SEARCH = 100;
 
-	public function get_board() {
+	/**
+	 * All columns, or only the orders matching a search.
+	 *
+	 * @param string $search Optional search term.
+	 * @return array
+	 */
+	public function get_board( $search = '' ) {
+		if ( '' !== $search ) {
+			return $this->search_board( $search );
+		}
+
 		$columns = array();
 		foreach ( self::COLUMNS as $status ) {
 			$columns[] = $this->get_column( $status );
@@ -22,12 +33,21 @@ class Board_Data {
 		return array( 'columns' => $columns );
 	}
 
-	public function get_column( $status ) {
+	/**
+	 * One page of orders in a column, newest first.
+	 *
+	 * @param string $status Order status, with the "wc-" prefix.
+	 * @param int    $page   Page number, starting at 1.
+	 * @return array
+	 */
+	public function get_column( $status, $page = 1 ) {
+		$page   = max( 1, (int) $page );
 		$result = wc_get_orders(
 			array(
 				'type'     => 'shop_order',
 				'status'   => array( $status ),
 				'limit'    => self::PER_COLUMN,
+				'page'     => $page,
 				'paginate' => true,
 				'orderby'  => 'date',
 				'order'    => 'DESC',
@@ -35,11 +55,70 @@ class Board_Data {
 		);
 
 		return array(
-			'status' => $status,
-			'label'  => wc_get_order_status_name( $status ),
-			'color'  => $this->status_color( $status ),
-			'total'  => (int) $result->total,
-			'orders' => array_map( array( $this, 'card' ), $result->orders ),
+			'status'   => $status,
+			'label'    => wc_get_order_status_name( $status ),
+			'color'    => $this->status_color( $status ),
+			'total'    => (int) $result->total,
+			'page'     => $page,
+			'has_more' => $page < (int) $result->max_num_pages,
+			'orders'   => array_map( array( $this, 'card' ), $result->orders ),
+		);
+	}
+
+	/**
+	 * Orders matching a search (number, name, email…), grouped into the board columns.
+	 *
+	 * @param string $search Search term.
+	 * @return array
+	 */
+	private function search_board( $search ) {
+		$ids = array_map( 'absint', wc_order_search( $search ) );
+
+		// Higher IDs are newer, so keep the newest matches.
+		rsort( $ids );
+		$ids = array_slice( array_unique( $ids ), 0, self::MAX_SEARCH );
+
+		$grouped = array_fill_keys( self::COLUMNS, array() );
+
+		foreach ( $ids as $id ) {
+			$order = wc_get_order( $id );
+
+			// Skip refunds and other order types, like the normal board does.
+			if ( ! $order || 'shop_order' !== $order->get_type() ) {
+				continue;
+			}
+
+			$status = 'wc-' . $order->get_status();
+			if ( isset( $grouped[ $status ] ) ) {
+				$grouped[ $status ][] = $order;
+			}
+		}
+
+		$columns = array();
+		foreach ( $grouped as $status => $orders ) {
+			usort(
+				$orders,
+				static function ( $a, $b ) {
+					$a_date = $a->get_date_created();
+					$b_date = $b->get_date_created();
+					return ( $b_date ? $b_date->getTimestamp() : 0 ) <=> ( $a_date ? $a_date->getTimestamp() : 0 );
+				}
+			);
+
+			$columns[] = array(
+				'status'   => $status,
+				'label'    => wc_get_order_status_name( $status ),
+				'color'    => $this->status_color( $status ),
+				'total'    => count( $orders ),
+				'page'     => 1,
+				'has_more' => false,
+				'orders'   => array_map( array( $this, 'card' ), $orders ),
+			);
+		}
+
+		return array(
+			'columns' => $columns,
+			'search'  => $search,
 		);
 	}
 

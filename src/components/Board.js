@@ -11,7 +11,7 @@ import { useState } from '@wordpress/element';
 import Column from './Column';
 import { OrderCardPreview } from './OrderCard';
 
-export default function Board( { state, onMove, onOpen } ) {
+export default function Board( { state, onMove, onOpen, loadingMore, onLoadMore } ) {
 	const [ activeId, setActiveId ] = useState( null );
 
 	const sensors = useSensors(
@@ -43,6 +43,9 @@ export default function Board( { state, onMove, onOpen } ) {
 						column={ state.columns[ status ] }
 						orders={ state.orders }
 						onOpen={ onOpen }
+						isSearching={ state.search !== '' }
+						isLoadingMore={ Boolean( loadingMore[ status ] ) }
+						onLoadMore={ onLoadMore }
 					/>
 				) ) }
 			</div>

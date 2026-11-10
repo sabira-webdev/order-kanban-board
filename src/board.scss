@@ -468,3 +468,44 @@
 		color: var(--okb-muted);
 	}
 }
+
+// Header: search, last update and refresh ------------------------------------
+
+.okb-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px 16px;
+	margin-bottom: 16px;
+
+	&__search {
+		flex: 0 1 280px;
+		width: 280px;
+		max-width: 100%;
+	}
+
+	&__actions {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	&__updated {
+		color: var(--okb-muted);
+		font-size: 13px;
+	}
+}
+
+// Dim the board while it reloads.
+.okb-board-wrap.is-loading {
+	opacity: 0.6;
+	pointer-events: none;
+	transition: opacity 0.15s;
+}
+
+// "Show N more" at the bottom of a column.
+.okb-column__more {
+	justify-content: center;
+	align-self: center;
+}

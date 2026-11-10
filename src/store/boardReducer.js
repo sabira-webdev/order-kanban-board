@@ -8,6 +8,10 @@ export const initialState = {
 	columnOrder: [],
 	columns: {},
 	orders: {},
+	// The search the loaded board shows ('' for the normal board).
+	search: '',
+	// When the board was last loaded (ms timestamp).
+	updatedAt: null,
 };
 
 // Newest orders first, like the server.
@@ -26,6 +30,8 @@ function normalizeBoard( board ) {
 			label: column.label,
 			color: column.color,
 			total: column.total,
+			page: column.page || 1,
+			hasMore: Boolean( column.has_more ),
 			orderIds: column.orders.map( ( order ) => order.id ),
 		};
 		for ( const order of column.orders ) {
@@ -66,10 +72,30 @@ function addToColumn( columns, status, orderId, orders ) {
 	};
 }
 
+/**
+ * True when any column shows more than its first page.
+ *
+ * @param {Object} state Board state.
+ * @return {boolean} Whether extra pages are loaded.
+ */
+export function hasExtraPages( state ) {
+	return state.columnOrder.some( ( status ) => state.columns[ status ]?.page > 1 );
+}
+
 export default function boardReducer( state, action ) {
 	switch ( action.type ) {
+		case 'LOAD_START':
+			return { ...state, loadState: 'loading', error: null };
+
 		case 'LOAD_SUCCESS':
-			return { ...state, ...normalizeBoard( action.board ), loadState: 'ready', error: null };
+			return {
+				...state,
+				...normalizeBoard( action.board ),
+				search: action.board.search || '',
+				updatedAt: action.receivedAt,
+				loadState: 'ready',
+				error: null,
+			};
 
 		case 'LOAD_ERROR':
 			return { ...state, loadState: 'error', error: action.error };
@@ -98,6 +124,44 @@ export default function boardReducer( state, action ) {
 			}
 			columns = addToColumn( columns, incoming.status, incoming.id, orders );
 			return { ...state, orders, columns };
+		}
+
+		// Add the next page of a column below the orders already shown.
+		case 'APPEND_PAGE': {
+			const { status } = action.column;
+			const column = state.columns[ status ];
+			if ( ! column ) {
+				return state;
+			}
+
+			const orders = { ...state.orders };
+			const newIds = [];
+			for ( const order of action.column.orders ) {
+				const known = state.orders[ order.id ];
+				// Skip duplicates, and orders that were moved to another column here.
+				if ( column.orderIds.includes( order.id ) || ( known && known.status !== status ) ) {
+					continue;
+				}
+				if ( ! known ) {
+					orders[ order.id ] = order;
+				}
+				newIds.push( order.id );
+			}
+
+			return {
+				...state,
+				orders,
+				columns: {
+					...state.columns,
+					[ status ]: {
+						...column,
+						total: action.column.total,
+						page: action.column.page,
+						hasMore: Boolean( action.column.has_more ),
+						orderIds: [ ...column.orderIds, ...newIds ].sort( byNewest( orders ) ),
+					},
+				},
+			};
 		}
 
 		default:

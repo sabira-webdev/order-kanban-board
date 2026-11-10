@@ -10,7 +10,7 @@ const UNITS = [
 /**
  * Short relative time, e.g. "3 hours ago" or "yesterday".
  *
- * @param {string} date ISO date string.
+ * @param {string|number} date ISO date string or timestamp in milliseconds.
  * @return {string} Relative time, or an empty string for invalid dates.
  */
 export function timeAgo( date ) {

@@ -3,14 +3,18 @@ import { useCallback, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import Board from './components/Board';
+import Header from './components/Header';
 import OrderPanel from './components/OrderPanel';
 import useBoard from './hooks/useBoard';
+import useDebouncedValue from './hooks/useDebouncedValue';
 
 const statuses = window.okbData?.statuses || [];
 let noticeId = 0;
 
 export default function App() {
-	const { state, reload, moveOrder, updateOrder } = useBoard();
+	const [ searchInput, setSearchInput ] = useState( '' );
+	const search = useDebouncedValue( searchInput.trim(), 350 );
+	const { state, reload, moveOrder, updateOrder, loadMore, loadingMore } = useBoard( { search } );
 	const [ notices, setNotices ] = useState( [] );
 	const [ openOrderId, setOpenOrderId ] = useState( null );
 
@@ -48,12 +52,27 @@ export default function App() {
 		}
 	};
 
+	const handleLoadMore = ( status ) => {
+		loadMore( status ).catch( ( error ) =>
+			notify( error.message || __( 'More orders could not be loaded. Try again.', 'order-kanban-board' ) )
+		);
+	};
+
 	const hasBoard = state.columnOrder.length > 0;
+	const isLoading = state.loadState === 'loading';
 	const openOrder = openOrderId ? state.orders[ openOrderId ] : null;
 
 	return (
 		<div className="okb-app">
 			<h2 className="okb-app__title">{ __( 'Order board', 'order-kanban-board' ) }</h2>
+
+			<Header
+				search={ searchInput }
+				onSearchChange={ setSearchInput }
+				updatedAt={ state.updatedAt }
+				isLoading={ isLoading }
+				onRefresh={ reload }
+			/>
 
 			{ state.loadState === 'error' && (
 				<Notice status="error" isDismissible={ false }>
@@ -62,9 +81,19 @@ export default function App() {
 				</Notice>
 			) }
 
-			{ ! hasBoard && state.loadState === 'loading' && <Spinner /> }
+			{ ! hasBoard && isLoading && <Spinner /> }
 
-			{ hasBoard && <Board state={ state } onMove={ handleMove } onOpen={ setOpenOrderId } /> }
+			{ hasBoard && (
+				<div className={ isLoading ? 'okb-board-wrap is-loading' : 'okb-board-wrap' } aria-busy={ isLoading }>
+					<Board
+						state={ state }
+						onMove={ handleMove }
+						onOpen={ setOpenOrderId }
+						loadingMore={ loadingMore }
+						onLoadMore={ handleLoadMore }
+					/>
+				</div>
+			) }
 
 			{ openOrder && (
 				<OrderPanel

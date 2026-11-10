@@ -38,6 +38,35 @@ class Rest_Controller {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_board' ),
 				'permission_callback' => array( $this, 'can_manage_orders' ),
+				'args'                => array(
+					'search' => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::ROUTE_NAMESPACE,
+			'/columns/(?P<status>[\w-]+)/orders',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_column_orders' ),
+				'permission_callback' => array( $this, 'can_manage_orders' ),
+				'args'                => array(
+					'status' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'validate_callback' => array( $this, 'is_valid_status' ),
+					),
+					'page'   => array(
+						'type'    => 'integer',
+						'minimum' => 1,
+						'default' => 1,
+					),
+				),
 			)
 		);
 
@@ -102,8 +131,18 @@ class Rest_Controller {
 		return is_string( $value ) && array_key_exists( $value, wc_get_order_statuses() );
 	}
 
-	public function get_board() {
-		return rest_ensure_response( $this->data->get_board() );
+	/**
+	 * GET /board?search=
+	 */
+	public function get_board( WP_REST_Request $request ) {
+		return rest_ensure_response( $this->data->get_board( trim( (string) $request['search'] ) ) );
+	}
+
+	/**
+	 * GET /columns/{status}/orders?page=N
+	 */
+	public function get_column_orders( WP_REST_Request $request ) {
+		return rest_ensure_response( $this->data->get_column( (string) $request['status'], (int) $request['page'] ) );
 	}
 
 	/**
