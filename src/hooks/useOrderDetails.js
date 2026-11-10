@@ -3,6 +3,10 @@ import { useEffect, useState } from '@wordpress/element';
 
 /**
  * Load full details for one order. Reloads when its status changes.
+ *
+ * @param {number} orderId Order ID.
+ * @param {string} status  Current status, so details reload after a move.
+ * @return {Object} { details, error, isLoading, setDetails }
  */
 export default function useOrderDetails( orderId, status ) {
 	const [ details, setDetails ] = useState( null );
@@ -14,7 +18,10 @@ export default function useOrderDetails( orderId, status ) {
 		setIsLoading( true );
 		setError( null );
 
-		apiFetch( { path: `/okb/v1/orders/${ orderId }`, signal: controller.signal } )
+		apiFetch( {
+			path: `/okb/v1/orders/${ orderId }`,
+			signal: controller.signal,
+		} )
 			.then( ( data ) => {
 				setDetails( data );
 				setIsLoading( false );

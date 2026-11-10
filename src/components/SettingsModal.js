@@ -1,17 +1,29 @@
 import apiFetch from '@wordpress/api-fetch';
-import { Button, CheckboxControl, Modal, Notice, SelectControl } from '@wordpress/components';
+import {
+	Button,
+	CheckboxControl,
+	Modal,
+	Notice,
+	SelectControl,
+} from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 const MAX_COLUMNS = 8;
 
-const PER_COLUMN_OPTIONS = [ 10, 20, 30, 50 ].map( ( n ) => ( { value: String( n ), label: String( n ) } ) );
+const PER_COLUMN_OPTIONS = [ 10, 20, 30, 50 ].map( ( n ) => ( {
+	value: String( n ),
+	label: String( n ),
+} ) );
 
 const POLL_OPTIONS = [
 	{ value: '30', label: __( 'Every 30 seconds', 'order-kanban-board' ) },
 	{ value: '60', label: __( 'Every minute', 'order-kanban-board' ) },
 	{ value: '300', label: __( 'Every 5 minutes', 'order-kanban-board' ) },
-	{ value: '0', label: __( 'Never (refresh by hand)', 'order-kanban-board' ) },
+	{
+		value: '0',
+		label: __( 'Never (refresh by hand)', 'order-kanban-board' ),
+	},
 ];
 
 /**
@@ -23,20 +35,33 @@ const POLL_OPTIONS = [
  * @param {Function} props.onClose  Close without saving.
  * @param {Function} props.onSaved  Called with the saved settings.
  */
-export default function SettingsModal( { settings, statuses, onClose, onSaved } ) {
+export default function SettingsModal( {
+	settings,
+	statuses,
+	onClose,
+	onSaved,
+} ) {
 	const [ columns, setColumns ] = useState( settings.columns );
-	const [ perColumn, setPerColumn ] = useState( String( settings.per_column ) );
-	const [ pollSeconds, setPollSeconds ] = useState( String( settings.poll_seconds ) );
+	const [ perColumn, setPerColumn ] = useState(
+		String( settings.per_column )
+	);
+	const [ pollSeconds, setPollSeconds ] = useState(
+		String( settings.poll_seconds )
+	);
 	const [ isSaving, setIsSaving ] = useState( false );
 	const [ error, setError ] = useState( null );
 
-	const labelOf = ( value ) => statuses.find( ( s ) => s.value === value )?.label || value;
+	const labelOf = ( value ) =>
+		statuses.find( ( s ) => s.value === value )?.label || value;
 	const available = statuses.filter( ( s ) => ! columns.includes( s.value ) );
 	const isFull = columns.length >= MAX_COLUMNS;
 
 	const move = ( index, offset ) => {
 		const next = [ ...columns ];
-		[ next[ index ], next[ index + offset ] ] = [ next[ index + offset ], next[ index ] ];
+		[ next[ index ], next[ index + offset ] ] = [
+			next[ index + offset ],
+			next[ index ],
+		];
 		setColumns( next );
 	};
 
@@ -56,13 +81,23 @@ export default function SettingsModal( { settings, statuses, onClose, onSaved } 
 			} );
 			onSaved( saved );
 		} catch ( err ) {
-			setError( err.message || __( 'The settings could not be saved. Try again.', 'order-kanban-board' ) );
+			setError(
+				err.message ||
+					__(
+						'The settings could not be saved. Try again.',
+						'order-kanban-board'
+					)
+			);
 			setIsSaving( false );
 		}
 	};
 
 	return (
-		<Modal title={ __( 'Board settings', 'order-kanban-board' ) } onRequestClose={ onClose } className="okb-settings">
+		<Modal
+			title={ __( 'Board settings', 'order-kanban-board' ) }
+			onRequestClose={ onClose }
+			className="okb-settings"
+		>
 			<form onSubmit={ save }>
 				{ error && (
 					<Notice status="error" isDismissible={ false }>
@@ -70,7 +105,9 @@ export default function SettingsModal( { settings, statuses, onClose, onSaved } 
 					</Notice>
 				) }
 
-				<h3 className="okb-settings__heading">{ __( 'Columns on the board', 'order-kanban-board' ) }</h3>
+				<h3 className="okb-settings__heading">
+					{ __( 'Columns on the board', 'order-kanban-board' ) }
+				</h3>
 				<ul className="okb-settings__list">
 					{ columns.map( ( value, index ) => {
 						const label = labelOf( value );
@@ -80,7 +117,13 @@ export default function SettingsModal( { settings, statuses, onClose, onSaved } 
 									label={ label }
 									checked
 									disabled={ columns.length === 1 }
-									onChange={ () => setColumns( columns.filter( ( c ) => c !== value ) ) }
+									onChange={ () =>
+										setColumns(
+											columns.filter(
+												( c ) => c !== value
+											)
+										)
+									}
 									__nextHasNoMarginBottom
 								/>
 								<span className="okb-settings__move">
@@ -89,7 +132,10 @@ export default function SettingsModal( { settings, statuses, onClose, onSaved } 
 										size="small"
 										label={ sprintf(
 											/* translators: %s: status name */
-											__( 'Move %s up', 'order-kanban-board' ),
+											__(
+												'Move %s up',
+												'order-kanban-board'
+											),
 											label
 										) }
 										disabled={ index === 0 }
@@ -100,10 +146,15 @@ export default function SettingsModal( { settings, statuses, onClose, onSaved } 
 										size="small"
 										label={ sprintf(
 											/* translators: %s: status name */
-											__( 'Move %s down', 'order-kanban-board' ),
+											__(
+												'Move %s down',
+												'order-kanban-board'
+											),
 											label
 										) }
-										disabled={ index === columns.length - 1 }
+										disabled={
+											index === columns.length - 1
+										}
 										onClick={ () => move( index, 1 ) }
 									/>
 								</span>
@@ -114,24 +165,37 @@ export default function SettingsModal( { settings, statuses, onClose, onSaved } 
 
 				{ available.length > 0 && (
 					<>
-						<h3 className="okb-settings__heading">{ __( 'Add a column', 'order-kanban-board' ) }</h3>
+						<h3 className="okb-settings__heading">
+							{ __( 'Add a column', 'order-kanban-board' ) }
+						</h3>
 						{ isFull && (
 							<p className="okb-muted">
 								{ sprintf(
 									/* translators: %d: maximum number of columns */
-									__( 'The board can show up to %d columns.', 'order-kanban-board' ),
+									__(
+										'The board can show up to %d columns.',
+										'order-kanban-board'
+									),
 									MAX_COLUMNS
 								) }
 							</p>
 						) }
 						<ul className="okb-settings__list">
 							{ available.map( ( status ) => (
-								<li key={ status.value } className="okb-settings__row">
+								<li
+									key={ status.value }
+									className="okb-settings__row"
+								>
 									<CheckboxControl
 										label={ status.label }
 										checked={ false }
 										disabled={ isFull }
-										onChange={ () => setColumns( [ ...columns, status.value ] ) }
+										onChange={ () =>
+											setColumns( [
+												...columns,
+												status.value,
+											] )
+										}
 										__nextHasNoMarginBottom
 									/>
 								</li>
@@ -142,14 +206,20 @@ export default function SettingsModal( { settings, statuses, onClose, onSaved } 
 
 				<div className="okb-settings__selects">
 					<SelectControl
-						label={ __( 'Orders loaded per column', 'order-kanban-board' ) }
+						label={ __(
+							'Orders loaded per column',
+							'order-kanban-board'
+						) }
 						value={ perColumn }
 						options={ PER_COLUMN_OPTIONS }
 						onChange={ setPerColumn }
 						__nextHasNoMarginBottom
 					/>
 					<SelectControl
-						label={ __( 'Check for new orders', 'order-kanban-board' ) }
+						label={ __(
+							'Check for new orders',
+							'order-kanban-board'
+						) }
 						value={ pollSeconds }
 						options={ POLL_OPTIONS }
 						onChange={ setPollSeconds }
@@ -158,10 +228,19 @@ export default function SettingsModal( { settings, statuses, onClose, onSaved } 
 				</div>
 
 				<div className="okb-modal-actions">
-					<Button variant="tertiary" onClick={ onClose } disabled={ isSaving }>
+					<Button
+						variant="tertiary"
+						onClick={ onClose }
+						disabled={ isSaving }
+					>
 						{ __( 'Cancel', 'order-kanban-board' ) }
 					</Button>
-					<Button variant="primary" type="submit" isBusy={ isSaving } disabled={ isSaving }>
+					<Button
+						variant="primary"
+						type="submit"
+						isBusy={ isSaving }
+						disabled={ isSaving }
+					>
 						{ __( 'Save settings', 'order-kanban-board' ) }
 					</Button>
 				</div>

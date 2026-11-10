@@ -9,6 +9,9 @@ namespace OKB;
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Adds the board page and loads its scripts.
+ */
 class Admin_Page {
 
 	const SLUG = 'okb-order-board';
@@ -21,14 +24,24 @@ class Admin_Page {
 	private $hook_suffix = '';
 
 	/**
+	 * Board settings.
+	 *
 	 * @var Settings
 	 */
 	private $settings;
 
+	/**
+	 * Set up the admin page.
+	 *
+	 * @param Settings $settings Board settings.
+	 */
 	public function __construct( Settings $settings ) {
 		$this->settings = $settings;
 	}
 
+	/**
+	 * Connect to WordPress hooks.
+	 */
 	public function register() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ), 60 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );

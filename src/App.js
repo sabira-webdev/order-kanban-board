@@ -13,7 +13,10 @@ import useDebouncedValue from './hooks/useDebouncedValue';
 const okbData = window.okbData || {};
 const statuses = okbData.statuses || [];
 // The panel dropdown only needs value and label.
-const statusOptions = statuses.map( ( { value, label } ) => ( { value, label } ) );
+const statusOptions = statuses.map( ( { value, label } ) => ( {
+	value,
+	label,
+} ) );
 const defaultSettings = {
 	columns: [],
 	per_column: 20,
@@ -23,13 +26,17 @@ const defaultSettings = {
 let noticeId = 0;
 
 export default function App() {
-	const [ settings, setSettings ] = useState( { ...defaultSettings, ...okbData.settings } );
+	const [ settings, setSettings ] = useState( {
+		...defaultSettings,
+		...okbData.settings,
+	} );
 	const [ searchInput, setSearchInput ] = useState( '' );
 	const search = useDebouncedValue( searchInput.trim(), 350 );
-	const { state, reload, moveOrder, updateOrder, loadMore, loadingMore } = useBoard( {
-		search,
-		pollSeconds: settings.poll_seconds,
-	} );
+	const { state, reload, moveOrder, updateOrder, loadMore, loadingMore } =
+		useBoard( {
+			search,
+			pollSeconds: settings.poll_seconds,
+		} );
 	const [ notices, setNotices ] = useState( [] );
 	const [ openOrderId, setOpenOrderId ] = useState( null );
 	const [ pendingMove, setPendingMove ] = useState( null );
@@ -37,11 +44,16 @@ export default function App() {
 
 	const notify = useCallback( ( content, actions = [] ) => {
 		noticeId += 1;
-		setNotices( ( prev ) => [ ...prev.slice( -2 ), { id: `okb-${ noticeId }`, content, actions } ] );
+		setNotices( ( prev ) => [
+			...prev.slice( -2 ),
+			{ id: `okb-${ noticeId }`, content, actions },
+		] );
 	}, [] );
 
 	const labelOf = ( status ) =>
-		state.columns[ status ]?.label || statuses.find( ( s ) => s.value === status )?.label || status;
+		state.columns[ status ]?.label ||
+		statuses.find( ( s ) => s.value === status )?.label ||
+		status;
 
 	const handleMove = async ( orderId, to ) => {
 		const number = state.orders[ orderId ]?.number;
@@ -60,12 +72,21 @@ export default function App() {
 				[
 					{
 						label: __( 'Undo', 'order-kanban-board' ),
-						onClick: () => moveOrder( orderId, result.from ).catch( ( error ) => notify( error.message ) ),
+						onClick: () =>
+							moveOrder( orderId, result.from ).catch(
+								( error ) => notify( error.message )
+							),
 					},
 				]
 			);
 		} catch ( error ) {
-			notify( error.message || __( 'The order could not be moved. Try again.', 'order-kanban-board' ) );
+			notify(
+				error.message ||
+					__(
+						'The order could not be moved. Try again.',
+						'order-kanban-board'
+					)
+			);
 		}
 	};
 
@@ -82,7 +103,12 @@ export default function App() {
 			return;
 		}
 		if ( settings.confirm_statuses.includes( to ) ) {
-			setPendingMove( { orderId, to, number: order.number, label: labelOf( to ) } );
+			setPendingMove( {
+				orderId,
+				to,
+				number: order.number,
+				label: labelOf( to ),
+			} );
 			return;
 		}
 		handleMove( orderId, to );
@@ -96,7 +122,13 @@ export default function App() {
 
 	const handleLoadMore = ( status ) => {
 		loadMore( status ).catch( ( error ) =>
-			notify( error.message || __( 'More orders could not be loaded. Try again.', 'order-kanban-board' ) )
+			notify(
+				error.message ||
+					__(
+						'More orders could not be loaded. Try again.',
+						'order-kanban-board'
+					)
+			)
 		);
 	};
 
@@ -113,8 +145,6 @@ export default function App() {
 
 	return (
 		<div className="okb-app">
-			<h2 className="okb-app__title">{ __( 'Order board', 'order-kanban-board' ) }</h2>
-
 			<Header
 				search={ searchInput }
 				onSearchChange={ setSearchInput }
@@ -129,14 +159,23 @@ export default function App() {
 			{ state.loadState === 'error' && (
 				<Notice status="error" isDismissible={ false }>
 					<p>{ state.error?.message }</p>
-					<Button variant="secondary" onClick={ reload }>{ __( 'Try again', 'order-kanban-board' ) }</Button>
+					<Button variant="secondary" onClick={ reload }>
+						{ __( 'Try again', 'order-kanban-board' ) }
+					</Button>
 				</Notice>
 			) }
 
 			{ ! hasBoard && isLoading && <Spinner /> }
 
 			{ hasBoard && (
-				<div className={ isLoading ? 'okb-board-wrap is-loading' : 'okb-board-wrap' } aria-busy={ isLoading }>
+				<div
+					className={
+						isLoading
+							? 'okb-board-wrap is-loading'
+							: 'okb-board-wrap'
+					}
+					aria-busy={ isLoading }
+				>
 					<Board
 						state={ state }
 						onMove={ requestMove }
@@ -180,7 +219,11 @@ export default function App() {
 			<SnackbarList
 				className="okb-snackbars"
 				notices={ notices }
-				onRemove={ ( id ) => setNotices( ( prev ) => prev.filter( ( n ) => n.id !== id ) ) }
+				onRemove={ ( id ) =>
+					setNotices( ( prev ) =>
+						prev.filter( ( n ) => n.id !== id )
+					)
+				}
 			/>
 		</div>
 	);

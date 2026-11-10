@@ -9,15 +9,25 @@ namespace OKB;
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Reads orders with the WooCommerce CRUD API and returns plain arrays for the REST API.
+ */
 class Board_Data {
 
 	const MAX_SEARCH = 100;
 
 	/**
+	 * Board settings.
+	 *
 	 * @var Settings
 	 */
 	private $settings;
 
+	/**
+	 * Set up the data loader.
+	 *
+	 * @param Settings $settings Board settings.
+	 */
 	public function __construct( Settings $settings ) {
 		$this->settings = $settings;
 	}
@@ -186,8 +196,14 @@ class Board_Data {
 			);
 		}
 
-		$notes = array();
-		foreach ( wc_get_order_notes( array( 'order_id' => $order->get_id(), 'limit' => 20 ) ) as $note ) {
+		$notes     = array();
+		$raw_notes = wc_get_order_notes(
+			array(
+				'order_id' => $order->get_id(),
+				'limit'    => 20,
+			)
+		);
+		foreach ( $raw_notes as $note ) {
 			$notes[] = array(
 				'id'          => (int) $note->id,
 				'content'     => wp_strip_all_tags( $note->content ),
@@ -218,6 +234,12 @@ class Board_Data {
 		);
 	}
 
+	/**
+	 * Billing name, company, or "Guest".
+	 *
+	 * @param \WC_Order $order Order.
+	 * @return string
+	 */
 	private function customer_name( $order ) {
 		$name = trim( $order->get_formatted_billing_full_name() );
 		if ( '' === $name ) {
@@ -226,6 +248,13 @@ class Board_Data {
 		return '' !== $name ? wp_strip_all_tags( $name ) : __( 'Guest', 'order-kanban-board' );
 	}
 
+	/**
+	 * A formatted price as plain text (no HTML, no entities).
+	 *
+	 * @param float  $amount   Amount.
+	 * @param string $currency Currency code.
+	 * @return string
+	 */
 	private function plain_price( $amount, $currency ) {
 		return html_entity_decode(
 			wp_strip_all_tags( wc_price( $amount, array( 'currency' => $currency ) ) ),

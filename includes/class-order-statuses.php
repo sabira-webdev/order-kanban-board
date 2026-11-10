@@ -9,6 +9,9 @@ namespace OKB;
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Registers the extra order statuses used by the board.
+ */
 class Order_Statuses {
 
 	/**
@@ -67,6 +70,9 @@ class Order_Statuses {
 
 	/**
 	 * Add our statuses to WooCommerce's list, right after "Processing".
+	 *
+	 * @param array $statuses Status key => label.
+	 * @return array
 	 */
 	public function add_to_order_statuses( $statuses ) {
 		$result = array();
@@ -85,6 +91,9 @@ class Order_Statuses {
 
 	/**
 	 * Orders being packed or waiting to ship are already paid.
+	 *
+	 * @param string[] $statuses Paid statuses, without the "wc-" prefix.
+	 * @return string[]
 	 */
 	public function add_to_paid_statuses( $statuses ) {
 		return array_unique( array_merge( $statuses, array( 'packing', 'ready-to-ship' ) ) );
@@ -92,6 +101,9 @@ class Order_Statuses {
 
 	/**
 	 * Add bulk actions to the orders list.
+	 *
+	 * @param array $actions Action key => label.
+	 * @return array
 	 */
 	public function add_bulk_actions( $actions ) {
 		$actions['mark_packing']       = __( 'Change status to packing', 'order-kanban-board' );

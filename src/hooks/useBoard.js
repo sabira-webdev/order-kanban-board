@@ -1,8 +1,17 @@
 import apiFetch from '@wordpress/api-fetch';
-import { useCallback, useEffect, useReducer, useRef, useState } from '@wordpress/element';
+import {
+	useCallback,
+	useEffect,
+	useReducer,
+	useRef,
+	useState,
+} from '@wordpress/element';
 import { addQueryArgs } from '@wordpress/url';
 
-import boardReducer, { hasExtraPages, initialState } from '../store/boardReducer';
+import boardReducer, {
+	hasExtraPages,
+	initialState,
+} from '../store/boardReducer';
 import usePolling from './usePolling';
 
 const isAbort = ( error ) => error?.name === 'AbortError';
@@ -35,7 +44,9 @@ export default function useBoard( { search = '', pollSeconds = 60 } = {} ) {
 		if ( moreControllersRef.current.size === 0 ) {
 			return;
 		}
-		moreControllersRef.current.forEach( ( controller ) => controller.abort() );
+		moreControllersRef.current.forEach( ( controller ) =>
+			controller.abort()
+		);
 		moreControllersRef.current.clear();
 		setLoadingMore( {} );
 	}, [] );
@@ -59,17 +70,28 @@ export default function useBoard( { search = '', pollSeconds = 60 } = {} ) {
 
 			try {
 				const board = await apiFetch( {
-					path: addQueryArgs( '/okb/v1/board', search ? { search } : {} ),
+					path: addQueryArgs(
+						'/okb/v1/board',
+						search ? { search } : {}
+					),
 					signal: controller.signal,
 				} );
 				if ( controller.signal.aborted ) {
 					return;
 				}
 				// Don't let a background refresh undo something that happened meanwhile.
-				if ( silent && ( changesRef.current !== changesAtStart || pendingMovesRef.current > 0 ) ) {
+				if (
+					silent &&
+					( changesRef.current !== changesAtStart ||
+						pendingMovesRef.current > 0 )
+				) {
 					return;
 				}
-				dispatch( { type: 'LOAD_SUCCESS', board, receivedAt: Date.now() } );
+				dispatch( {
+					type: 'LOAD_SUCCESS',
+					board,
+					receivedAt: Date.now(),
+				} );
 			} catch ( error ) {
 				if ( ! isAbort( error ) && ! silent ) {
 					dispatch( { type: 'LOAD_ERROR', error } );
@@ -92,7 +114,9 @@ export default function useBoard( { search = '', pollSeconds = 60 } = {} ) {
 	useEffect(
 		() => () => {
 			loadControllerRef.current?.abort();
-			moreControllersRef.current.forEach( ( controller ) => controller.abort() );
+			moreControllersRef.current.forEach( ( controller ) =>
+				controller.abort()
+			);
 		},
 		[]
 	);
@@ -162,7 +186,11 @@ export default function useBoard( { search = '', pollSeconds = 60 } = {} ) {
 	 */
 	const loadMore = useCallback( async ( status ) => {
 		const column = stateRef.current.columns[ status ];
-		if ( ! column || ! column.hasMore || moreControllersRef.current.has( status ) ) {
+		if (
+			! column ||
+			! column.hasMore ||
+			moreControllersRef.current.has( status )
+		) {
 			return;
 		}
 
@@ -172,9 +200,12 @@ export default function useBoard( { search = '', pollSeconds = 60 } = {} ) {
 
 		try {
 			const data = await apiFetch( {
-				path: addQueryArgs( `/okb/v1/columns/${ encodeURIComponent( status ) }/orders`, {
-					page: column.page + 1,
-				} ),
+				path: addQueryArgs(
+					`/okb/v1/columns/${ encodeURIComponent( status ) }/orders`,
+					{
+						page: column.page + 1,
+					}
+				),
 				signal: controller.signal,
 			} );
 			if ( ! controller.signal.aborted ) {
@@ -189,7 +220,10 @@ export default function useBoard( { search = '', pollSeconds = 60 } = {} ) {
 			// A full reload may have cancelled and cleared this request already.
 			if ( moreControllersRef.current.get( status ) === controller ) {
 				moreControllersRef.current.delete( status );
-				setLoadingMore( ( prev ) => ( { ...prev, [ status ]: false } ) );
+				setLoadingMore( ( prev ) => ( {
+					...prev,
+					[ status ]: false,
+				} ) );
 			}
 		}
 	}, [] );

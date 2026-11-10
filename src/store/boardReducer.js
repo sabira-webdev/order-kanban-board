@@ -67,7 +67,9 @@ function addToColumn( columns, status, orderId, orders ) {
 		[ status ]: {
 			...column,
 			total: column.total + 1,
-			orderIds: [ ...column.orderIds, orderId ].sort( byNewest( orders ) ),
+			orderIds: [ ...column.orderIds, orderId ].sort(
+				byNewest( orders )
+			),
 		},
 	};
 }
@@ -79,7 +81,9 @@ function addToColumn( columns, status, orderId, orders ) {
  * @return {boolean} Whether extra pages are loaded.
  */
 export function hasExtraPages( state ) {
-	return state.columnOrder.some( ( status ) => state.columns[ status ]?.page > 1 );
+	return state.columnOrder.some(
+		( status ) => state.columns[ status ]?.page > 1
+	);
 }
 
 export default function boardReducer( state, action ) {
@@ -107,7 +111,10 @@ export default function boardReducer( state, action ) {
 			if ( ! order || from === to ) {
 				return state;
 			}
-			const orders = { ...state.orders, [ orderId ]: { ...order, status: to } };
+			const orders = {
+				...state.orders,
+				[ orderId ]: { ...order, status: to },
+			};
 			let columns = removeFromColumn( state.columns, from, orderId );
 			columns = addToColumn( columns, to, orderId, orders );
 			return { ...state, orders, columns };
@@ -120,9 +127,18 @@ export default function boardReducer( state, action ) {
 			const orders = { ...state.orders, [ incoming.id ]: incoming };
 			let columns = state.columns;
 			if ( existing && existing.status !== incoming.status ) {
-				columns = removeFromColumn( columns, existing.status, incoming.id );
+				columns = removeFromColumn(
+					columns,
+					existing.status,
+					incoming.id
+				);
 			}
-			columns = addToColumn( columns, incoming.status, incoming.id, orders );
+			columns = addToColumn(
+				columns,
+				incoming.status,
+				incoming.id,
+				orders
+			);
 			return { ...state, orders, columns };
 		}
 
@@ -139,7 +155,10 @@ export default function boardReducer( state, action ) {
 			for ( const order of action.column.orders ) {
 				const known = state.orders[ order.id ];
 				// Skip duplicates, and orders that were moved to another column here.
-				if ( column.orderIds.includes( order.id ) || ( known && known.status !== status ) ) {
+				if (
+					column.orderIds.includes( order.id ) ||
+					( known && known.status !== status )
+				) {
 					continue;
 				}
 				if ( ! known ) {
@@ -158,7 +177,9 @@ export default function boardReducer( state, action ) {
 						total: action.column.total,
 						page: action.column.page,
 						hasMore: Boolean( action.column.has_more ),
-						orderIds: [ ...column.orderIds, ...newIds ].sort( byNewest( orders ) ),
+						orderIds: [ ...column.orderIds, ...newIds ].sort(
+							byNewest( orders )
+						),
 					},
 				},
 			};

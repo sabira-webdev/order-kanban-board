@@ -4,9 +4,17 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 import { timeAgo } from '../utils/time';
 
 const GripIcon = () => (
-	<svg width="12" height="18" viewBox="0 0 12 18" aria-hidden="true" focusable="false">
+	<svg
+		width="12"
+		height="18"
+		viewBox="0 0 12 18"
+		aria-hidden="true"
+		focusable="false"
+	>
 		{ [ 3, 9, 15 ].map( ( y ) =>
-			[ 3, 9 ].map( ( x ) => <circle key={ `${ x }-${ y }` } cx={ x } cy={ y } r="1.6" /> )
+			[ 3, 9 ].map( ( x ) => (
+				<circle key={ `${ x }-${ y }` } cx={ x } cy={ y } r="1.6" />
+			) )
 		) }
 	</svg>
 );
@@ -22,16 +30,29 @@ function CardBody( { order } ) {
 				<span>
 					{ sprintf(
 						/* translators: %d: number of items */
-						_n( '%d item', '%d items', order.items, 'order-kanban-board' ),
+						_n(
+							'%d item',
+							'%d items',
+							order.items,
+							'order-kanban-board'
+						),
 						order.items
 					) }
 				</span>
-				{ order.date && <time dateTime={ order.date }>{ timeAgo( order.date ) }</time> }
+				{ order.date && (
+					<time dateTime={ order.date }>
+						{ timeAgo( order.date ) }
+					</time>
+				) }
 				{ order.has_note && (
-					<span className="okb-card__flag">{ __( 'Customer note', 'order-kanban-board' ) }</span>
+					<span className="okb-card__flag">
+						{ __( 'Customer note', 'order-kanban-board' ) }
+					</span>
 				) }
 			</div>
-			{ order.shipping && <p className="okb-card__shipping">{ order.shipping }</p> }
+			{ order.shipping && (
+				<p className="okb-card__shipping">{ order.shipping }</p>
+			) }
 		</>
 	);
 }
@@ -50,9 +71,15 @@ export function OrderCardPreview( { order } ) {
 /**
  * Mouse/touch: drag anywhere on the card. Click: open the panel.
  * Keyboard: focus the grip, Space to pick up, arrows to move, Space to drop.
+ *
+ * @param {Object}   props
+ * @param {Object}   props.order  Card data from the REST API.
+ * @param {Function} props.onOpen Open the quick-view panel for an order ID.
  */
 export default function OrderCard( { order, onOpen } ) {
-	const { attributes, listeners, setNodeRef, isDragging } = useDraggable( { id: order.id } );
+	const { attributes, listeners, setNodeRef, isDragging } = useDraggable( {
+		id: order.id,
+	} );
 
 	return (
 		<article
@@ -61,8 +88,14 @@ export default function OrderCard( { order, onOpen } ) {
 			onPointerDown={ listeners?.onPointerDown }
 		>
 			<div className="okb-card__head">
-				<button type="button" className="okb-card__open" onClick={ () => onOpen( order.id ) }>
-					<span className="screen-reader-text">{ __( 'Open order', 'order-kanban-board' ) }</span>
+				<button
+					type="button"
+					className="okb-card__open"
+					onClick={ () => onOpen( order.id ) }
+				>
+					<span className="screen-reader-text">
+						{ __( 'Open order', 'order-kanban-board' ) }
+					</span>
 					<span className="okb-card__number">#{ order.number }</span>
 				</button>
 				<button

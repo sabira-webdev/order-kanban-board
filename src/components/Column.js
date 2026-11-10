@@ -15,7 +15,10 @@ export default function Column( {
 } ) {
 	const { setNodeRef, isOver } = useDroppable( { id: column.status } );
 	const headingId = `okb-column-${ column.status }`;
-	const nextCount = Math.min( pageSize, column.total - column.orderIds.length );
+	const nextCount = Math.min(
+		pageSize,
+		column.total - column.orderIds.length
+	);
 
 	return (
 		<section
@@ -25,7 +28,9 @@ export default function Column( {
 			aria-labelledby={ headingId }
 		>
 			<header className="okb-column__header">
-				<h2 id={ headingId } className="okb-column__title">{ column.label }</h2>
+				<h2 id={ headingId } className="okb-column__title">
+					{ column.label }
+				</h2>
 				<span className="okb-column__count">{ column.total }</span>
 			</header>
 
@@ -34,11 +39,17 @@ export default function Column( {
 					<p className="okb-column__empty">
 						{ isSearching
 							? __( 'No matching orders.', 'order-kanban-board' )
-							: __( 'No orders. Drag one here to change its status.', 'order-kanban-board' ) }
+							: __( 'No orders', 'order-kanban-board' ) }
 					</p>
 				) : (
 					column.orderIds.map( ( id ) =>
-						orders[ id ] ? <OrderCard key={ id } order={ orders[ id ] } onOpen={ onOpen } /> : null
+						orders[ id ] ? (
+							<OrderCard
+								key={ id }
+								order={ orders[ id ] }
+								onOpen={ onOpen }
+							/>
+						) : null
 					)
 				) }
 
@@ -52,10 +63,15 @@ export default function Column( {
 					>
 						{ nextCount > 0
 							? sprintf(
-								/* translators: %d: number of orders */
-								_n( 'Show %d more', 'Show %d more', nextCount, 'order-kanban-board' ),
-								nextCount
-							)
+									/* translators: %d: number of orders */
+									_n(
+										'Show %d more',
+										'Show %d more',
+										nextCount,
+										'order-kanban-board'
+									),
+									nextCount
+								)
 							: __( 'Show more', 'order-kanban-board' ) }
 					</Button>
 				) }

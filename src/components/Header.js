@@ -21,21 +21,32 @@ export default function Header( {
 
 	return (
 		<div className="okb-header">
-			<SearchControl
-				className="okb-header__search"
-				label={ __( 'Search orders', 'order-kanban-board' ) }
-				placeholder={ __( 'Order number, name or email', 'order-kanban-board' ) }
-				value={ search }
-				onChange={ onSearchChange }
-				__nextHasNoMarginBottom
-			/>
+			<div className="okb-header__main">
+				<div className="okb-header__title-group">
+					<h2 className="okb-app__title">
+						{ __( 'Order board', 'order-kanban-board' ) }
+					</h2>
+					{ ordersUrl && (
+						<a className="okb-header__back" href={ ordersUrl }>
+							{ __( 'Back to order list', 'order-kanban-board' ) }
+						</a>
+					) }
+				</div>
+
+				<SearchControl
+					className="okb-header__search"
+					label={ __( 'Search orders', 'order-kanban-board' ) }
+					placeholder={ __(
+						'Order number, name or email',
+						'order-kanban-board'
+					) }
+					value={ search }
+					onChange={ onSearchChange }
+					__nextHasNoMarginBottom
+				/>
+			</div>
 
 			<div className="okb-header__actions">
-				{ ordersUrl && (
-					<Button variant="link" href={ ordersUrl }>
-						{ __( 'Back to order list', 'order-kanban-board' ) }
-					</Button>
-				) }
 				{ updatedAt && (
 					<span className="okb-header__updated">
 						{ sprintf(
@@ -45,11 +56,21 @@ export default function Header( {
 						) }
 					</span>
 				) }
-				<Button variant="secondary" onClick={ onRefresh } isBusy={ isLoading } disabled={ isLoading }>
+				<Button
+					variant="secondary"
+					size="compact"
+					__next40pxDefaultSize
+					onClick={ onRefresh }
+					isBusy={ isLoading }
+					disabled={ isLoading }
+				>
 					{ __( 'Refresh', 'order-kanban-board' ) }
 				</Button>
 				{ canManage && (
 					<Button
+						variant="secondary"
+						size="compact"
+						__next40pxDefaultSize
 						icon="admin-generic"
 						label={ __( 'Board settings', 'order-kanban-board' ) }
 						onClick={ onOpenSettings }

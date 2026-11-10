@@ -23,7 +23,10 @@ export default function usePolling( callback, seconds ) {
 
 		const start = () => {
 			if ( timer === null ) {
-				timer = window.setInterval( () => callbackRef.current(), seconds * 1000 );
+				timer = window.setInterval(
+					() => callbackRef.current(),
+					seconds * 1000
+				);
 			}
 		};
 
@@ -48,7 +51,10 @@ export default function usePolling( callback, seconds ) {
 
 		return () => {
 			stop();
-			document.removeEventListener( 'visibilitychange', onVisibilityChange );
+			document.removeEventListener(
+				'visibilitychange',
+				onVisibilityChange
+			);
 		};
 	}, [ seconds ] );
 }

@@ -9,6 +9,9 @@ namespace OKB;
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Reads, validates and saves the board settings.
+ */
 class Settings {
 
 	const OPTION             = 'okb_settings';
@@ -162,18 +165,18 @@ class Settings {
 	/**
 	 * Known status keys from a list, in order, without duplicates.
 	 *
-	 * @param mixed $list Raw list.
+	 * @param mixed $statuses Raw list.
 	 * @return string[]
 	 */
-	private function valid_statuses( $list ) {
-		if ( ! is_array( $list ) ) {
+	private function valid_statuses( $statuses ) {
+		if ( ! is_array( $statuses ) ) {
 			return array();
 		}
 
 		$known  = $this->status_labels();
 		$result = array();
 
-		foreach ( $list as $status ) {
+		foreach ( $statuses as $status ) {
 			$status = is_string( $status ) ? sanitize_key( $status ) : '';
 			if ( isset( $known[ $status ] ) && ! in_array( $status, $result, true ) ) {
 				$result[] = $status;

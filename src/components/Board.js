@@ -11,7 +11,14 @@ import { useState } from '@wordpress/element';
 import Column from './Column';
 import { OrderCardPreview } from './OrderCard';
 
-export default function Board( { state, onMove, onOpen, pageSize, loadingMore, onLoadMore } ) {
+export default function Board( {
+	state,
+	onMove,
+	onOpen,
+	pageSize,
+	loadingMore,
+	onLoadMore,
+} ) {
 	const [ activeId, setActiveId ] = useState( null );
 
 	const sensors = useSensors(
@@ -52,7 +59,9 @@ export default function Board( { state, onMove, onOpen, pageSize, loadingMore, o
 			</div>
 
 			<DragOverlay dropAnimation={ null }>
-				{ activeOrder ? <OrderCardPreview order={ activeOrder } /> : null }
+				{ activeOrder ? (
+					<OrderCardPreview order={ activeOrder } />
+				) : null }
 			</DragOverlay>
 		</DndContext>
 	);

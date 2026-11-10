@@ -10,7 +10,12 @@ import { __, sprintf } from '@wordpress/i18n';
  * @param {Function} props.onConfirm Move the order.
  * @param {Function} props.onCancel  Keep the current status.
  */
-export default function ConfirmMoveModal( { number, label, onConfirm, onCancel } ) {
+export default function ConfirmMoveModal( {
+	number,
+	label,
+	onConfirm,
+	onCancel,
+} ) {
 	return (
 		<Modal
 			title={ sprintf(

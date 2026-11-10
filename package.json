@@ -1,13 +1,18 @@
 {
   "name": "order-kanban-board",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Drag-and-drop order board for WooCommerce",
   "author": "Sabira K",
-  "license": "GPL-2.0-or-later",
+  "license": "GPL-3.0-or-later",
   "private": true,
   "scripts": {
     "build": "wp-scripts build",
-    "start": "wp-scripts start"
+    "start": "wp-scripts start",
+    "test": "wp-scripts test-unit-js",
+    "lint:js": "wp-scripts lint-js src",
+    "lint:css": "wp-scripts lint-style \"src/**/*.scss\"",
+    "format": "wp-scripts format src",
+    "plugin-zip": "wp-scripts plugin-zip"
   },
   "repository": {
     "type": "git",
@@ -15,9 +20,26 @@
   },
   "homepage": "https://github.com/sabira-webdev/order-kanban-board#readme",
   "devDependencies": {
-    "@wordpress/scripts": "^35.0.0"
+    "@wordpress/scripts": "^37.1.0",
+    "eslint": "^10.14.0",
+    "vite": "^8.3.7",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
-    "@dnd-kit/core": "^6.3.1"
-  }
+    "@dnd-kit/core": "^6.3.1",
+    "@wordpress/api-fetch": "^8.1.0",
+    "@wordpress/components": "^44.0.0",
+    "@wordpress/compose": "^9.1.0",
+    "@wordpress/element": "^10.1.0",
+    "@wordpress/i18n": "^7.1.0",
+    "@wordpress/url": "^5.1.0"
+  },
+  "files": [
+    "build",
+    "includes",
+    "languages",
+    "order-kanban-board.php",
+    "readme.txt",
+    "uninstall.php"
+  ]
 }
