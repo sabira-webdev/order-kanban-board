@@ -1,0 +1,20 @@
+{
+  "name": "order-kanban-board",
+  "version": "0.1.0",
+  "description": "Drag-and-drop order board for WooCommerce",
+  "author": "Sabira K",
+  "license": "GPL-2.0-or-later",
+  "private": true,
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sabira-webdev/order-kanban-board.git"
+  },
+  "homepage": "https://github.com/sabira-webdev/order-kanban-board#readme",
+  "devDependencies": {
+    "@wordpress/scripts": "^35.0.0"
+  }
+}
