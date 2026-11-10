@@ -43,7 +43,7 @@ class Board_Data {
 	 * @param string $status Status with "wc-" prefix.
 	 * @return array
 	 */
-	public function get_column( $status ) {
+		public function get_column( $status ) {
 		$result = wc_get_orders(
 			array(
 				'type'     => 'shop_order',
@@ -58,6 +58,7 @@ class Board_Data {
 		return array(
 			'status' => $status,
 			'label'  => wc_get_order_status_name( $status ),
+			'color'  => $this->status_color( $status ),
 			'total'  => (int) $result->total,
 			'orders' => array_map( array( $this, 'card' ), $result->orders ),
 		);
@@ -82,6 +83,31 @@ class Board_Data {
 			'date'     => $date ? $date->format( DATE_ATOM ) : null,
 			'edit_url' => $order->get_edit_order_url(),
 		);
+	}
+
+	/**
+	 * Column color for a status. Other plugins can change colors with the filter.
+	 *
+	 * @param string $status Status with "wc-" prefix.
+	 * @return string Hex color.
+	 */
+	private function status_color( $status ) {
+		$colors = apply_filters(
+			'okb_status_colors',
+			array(
+				'wc-pending'       => '#8c8f94',
+				'wc-on-hold'       => '#b26200',
+				'wc-processing'    => '#2271b1',
+				'wc-packing'       => '#7a4fb0',
+				'wc-ready-to-ship' => '#00838f',
+				'wc-completed'     => '#008a20',
+				'wc-cancelled'     => '#646970',
+				'wc-refunded'      => '#646970',
+				'wc-failed'        => '#d63638',
+			)
+		);
+
+		return isset( $colors[ $status ] ) ? sanitize_hex_color( $colors[ $status ] ) : '#8c8f94';
 	}
 
 	/**

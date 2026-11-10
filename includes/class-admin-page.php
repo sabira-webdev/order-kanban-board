@@ -77,6 +77,11 @@ class Admin_Page {
 			true
 		);
 
-		wp_enqueue_style( 'wp-components' );
+				wp_enqueue_style(
+			'okb-board',
+			OKB_URL . 'build/index.css',
+			array( 'wp-components' ),
+			$asset['version']
+		);
 	}
 }

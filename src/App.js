@@ -1,7 +1,9 @@
 import apiFetch from '@wordpress/api-fetch';
-import { Spinner } from '@wordpress/components';
+import { Notice, Spinner } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+
+import Board from './components/Board';
 
 export default function App() {
 	const [ board, setBoard ] = useState( null );
@@ -13,18 +15,19 @@ export default function App() {
 			.catch( setError );
 	}, [] );
 
-	if ( error ) {
-		return <p>{ error.message }</p>;
-	}
-
-	if ( ! board ) {
-		return <Spinner />;
-	}
-
 	return (
-		<div>
-			<h2>{ __( 'Order board', 'order-kanban-board' ) }</h2>
-			<pre>{ JSON.stringify( board, null, 2 ) }</pre>
+		<div className="okb-app">
+			<h2 className="okb-app__title">{ __( 'Order board', 'order-kanban-board' ) }</h2>
+
+			{ error && (
+				<Notice status="error" isDismissible={ false }>
+					{ error.message }
+				</Notice>
+			) }
+
+			{ ! board && ! error && <Spinner /> }
+
+			{ board && <Board columns={ board.columns } /> }
 		</div>
 	);
 }

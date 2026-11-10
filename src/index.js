@@ -1,6 +1,7 @@
 import { createRoot } from '@wordpress/element';
 
 import App from './App';
+import './board.scss';
 
 const container = document.getElementById( 'okb-root' );
 
