@@ -3,7 +3,7 @@ import { __ } from '@wordpress/i18n';
 
 import OrderCard from './OrderCard';
 
-export default function Column( { column, orders } ) {
+export default function Column( { column, orders, onOpen } ) {
 	const { setNodeRef, isOver } = useDroppable( { id: column.status } );
 	const headingId = `okb-column-${ column.status }`;
 
@@ -15,9 +15,7 @@ export default function Column( { column, orders } ) {
 			aria-labelledby={ headingId }
 		>
 			<header className="okb-column__header">
-				<h2 id={ headingId } className="okb-column__title">
-					{ column.label }
-				</h2>
+				<h2 id={ headingId } className="okb-column__title">{ column.label }</h2>
 				<span className="okb-column__count">{ column.total }</span>
 			</header>
 
@@ -28,7 +26,7 @@ export default function Column( { column, orders } ) {
 					</p>
 				) : (
 					column.orderIds.map( ( id ) =>
-						orders[ id ] ? <OrderCard key={ id } order={ orders[ id ] } /> : null
+						orders[ id ] ? <OrderCard key={ id } order={ orders[ id ] } onOpen={ onOpen } /> : null
 					)
 				) }
 			</div>

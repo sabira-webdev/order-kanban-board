@@ -11,39 +11,18 @@ defined( 'ABSPATH' ) || exit;
 
 class Board_Data {
 
-	/**
-	 * Statuses shown as columns, left to right.
-	 * In Step 9 these will come from the settings screen.
-	 */
-	const COLUMNS = array( 'wc-on-hold', 'wc-processing', 'wc-packing', 'wc-ready-to-ship', 'wc-completed' );
-
-	/**
-	 * Orders loaded per column.
-	 */
+	const COLUMNS    = array( 'wc-on-hold', 'wc-processing', 'wc-packing', 'wc-ready-to-ship', 'wc-completed' );
 	const PER_COLUMN = 20;
 
-	/**
-	 * The full board: each column with its newest orders.
-	 *
-	 * @return array
-	 */
 	public function get_board() {
 		$columns = array();
-
 		foreach ( self::COLUMNS as $status ) {
 			$columns[] = $this->get_column( $status );
 		}
-
 		return array( 'columns' => $columns );
 	}
 
-	/**
-	 * One column: its label, total count and newest orders.
-	 *
-	 * @param string $status Status with "wc-" prefix.
-	 * @return array
-	 */
-		public function get_column( $status ) {
+	public function get_column( $status ) {
 		$result = wc_get_orders(
 			array(
 				'type'     => 'shop_order',
@@ -65,7 +44,7 @@ class Board_Data {
 	}
 
 	/**
-	 * The short order summary shown on a card.
+	 * Short summary shown on a card.
 	 *
 	 * @param \WC_Order $order Order.
 	 * @return array
@@ -81,16 +60,69 @@ class Board_Data {
 			'total'    => $this->plain_price( $order->get_total(), $order->get_currency() ),
 			'items'    => (int) $order->get_item_count(),
 			'date'     => $date ? $date->format( DATE_ATOM ) : null,
+			'shipping' => wp_strip_all_tags( $order->get_shipping_method() ),
+			'has_note' => '' !== trim( (string) $order->get_customer_note() ),
 			'edit_url' => $order->get_edit_order_url(),
 		);
 	}
 
 	/**
-	 * Column color for a status. Other plugins can change colors with the filter.
+	 * Everything the quick-view panel needs.
 	 *
-	 * @param string $status Status with "wc-" prefix.
-	 * @return string Hex color.
+	 * @param \WC_Order $order Order.
+	 * @return array
 	 */
+	public function details( $order ) {
+		$currency = $order->get_currency();
+		$incl_tax = 'incl' === get_option( 'woocommerce_tax_display_cart' );
+		$items    = array();
+
+		foreach ( $order->get_items() as $item ) {
+			$product  = is_callable( array( $item, 'get_product' ) ) ? $item->get_product() : null;
+			$image_id = $product ? $product->get_image_id() : 0;
+
+			$items[] = array(
+				'id'    => $item->get_id(),
+				'name'  => wp_strip_all_tags( $item->get_name() ),
+				'sku'   => $product ? (string) $product->get_sku() : '',
+				'qty'   => (int) $item->get_quantity(),
+				'total' => $this->plain_price( $order->get_line_total( $item, $incl_tax ), $currency ),
+				'image' => $image_id ? wp_get_attachment_image_url( $image_id, 'thumbnail' ) : null,
+			);
+		}
+
+		$notes = array();
+		foreach ( wc_get_order_notes( array( 'order_id' => $order->get_id(), 'limit' => 20 ) ) as $note ) {
+			$notes[] = array(
+				'id'          => (int) $note->id,
+				'content'     => wp_strip_all_tags( $note->content ),
+				'date'        => $note->date_created ? $note->date_created->format( DATE_ATOM ) : null,
+				'to_customer' => (bool) $note->customer_note,
+				'added_by'    => $note->added_by,
+			);
+		}
+
+		return array_merge(
+			$this->card( $order ),
+			array(
+				'email'            => $order->get_billing_email(),
+				'phone'            => $order->get_billing_phone(),
+				'payment_method'   => wp_strip_all_tags( $order->get_payment_method_title() ),
+				'customer_note'    => wp_strip_all_tags( (string) $order->get_customer_note() ),
+				'shipping_address' => $this->address_lines( $order->get_formatted_shipping_address() ),
+				'line_items'       => $items,
+				'totals'           => array(
+					'subtotal' => $this->plain_price( $order->get_subtotal(), $currency ),
+					'discount' => $order->get_total_discount() > 0 ? $this->plain_price( -1 * $order->get_total_discount(), $currency ) : null,
+					'shipping' => $this->plain_price( $order->get_shipping_total(), $currency ),
+					'tax'      => $this->plain_price( $order->get_total_tax(), $currency ),
+					'total'    => $this->plain_price( $order->get_total(), $currency ),
+				),
+				'notes'            => $notes,
+			)
+		);
+	}
+
 	private function status_color( $status ) {
 		$colors = apply_filters(
 			'okb_status_colors',
@@ -110,34 +142,40 @@ class Board_Data {
 		return isset( $colors[ $status ] ) ? sanitize_hex_color( $colors[ $status ] ) : '#8c8f94';
 	}
 
-	/**
-	 * Customer name, or company, or "Guest".
-	 *
-	 * @param \WC_Order $order Order.
-	 * @return string
-	 */
 	private function customer_name( $order ) {
 		$name = trim( $order->get_formatted_billing_full_name() );
-
 		if ( '' === $name ) {
 			$name = trim( $order->get_billing_company() );
 		}
-
 		return '' !== $name ? wp_strip_all_tags( $name ) : __( 'Guest', 'order-kanban-board' );
 	}
 
-	/**
-	 * Price in the store's format as plain text, e.g. "₹1,200.00".
-	 *
-	 * @param float  $amount   Amount.
-	 * @param string $currency Currency code.
-	 * @return string
-	 */
 	private function plain_price( $amount, $currency ) {
 		return html_entity_decode(
 			wp_strip_all_tags( wc_price( $amount, array( 'currency' => $currency ) ) ),
 			ENT_QUOTES,
 			'UTF-8'
 		);
+	}
+
+	/**
+	 * WooCommerce's address HTML ("line<br/>line") as plain lines.
+	 *
+	 * @param string $html Formatted address.
+	 * @return string[]
+	 */
+	private function address_lines( $html ) {
+		if ( empty( $html ) ) {
+			return array();
+		}
+
+		$lines = array_map(
+			static function ( $line ) {
+				return trim( html_entity_decode( wp_strip_all_tags( $line ), ENT_QUOTES, 'UTF-8' ) );
+			},
+			preg_split( '/<br\s*\/?>/i', $html )
+		);
+
+		return array_values( array_filter( $lines, 'strlen' ) );
 	}
 }

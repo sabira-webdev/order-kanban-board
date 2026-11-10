@@ -55,5 +55,10 @@ export default function useBoard() {
 		}
 	}, [] );
 
-	return { state, reload: load, moveOrder };
+		// Replace one card with fresh data (for example, after adding a note).
+	const updateOrder = useCallback( ( order ) => {
+		dispatch( { type: 'UPSERT_ORDER', order } );
+	}, [] );
+
+		return { state, reload: load, moveOrder, updateOrder };
 }

@@ -77,7 +77,24 @@ class Admin_Page {
 			true
 		);
 
-				wp_enqueue_style(
+		// All order statuses, for the status dropdown in the panel.
+		$statuses = array();
+		foreach ( wc_get_order_statuses() as $value => $label ) {
+			if ( 'wc-checkout-draft' !== $value ) {
+				$statuses[] = array(
+					'value' => $value,
+					'label' => $label,
+				);
+			}
+		}
+
+		wp_add_inline_script(
+			'okb-board',
+			'window.okbData = ' . wp_json_encode( array( 'statuses' => $statuses ) ) . ';',
+			'before'
+		);
+
+		wp_enqueue_style(
 			'okb-board',
 			OKB_URL . 'build/index.css',
 			array( 'wp-components' ),

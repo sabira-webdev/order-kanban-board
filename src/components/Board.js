@@ -11,7 +11,7 @@ import { useState } from '@wordpress/element';
 import Column from './Column';
 import { OrderCardPreview } from './OrderCard';
 
-export default function Board( { state, onMove } ) {
+export default function Board( { state, onMove, onOpen } ) {
 	const [ activeId, setActiveId ] = useState( null );
 
 	const sensors = useSensors(
@@ -42,6 +42,7 @@ export default function Board( { state, onMove } ) {
 						key={ status }
 						column={ state.columns[ status ] }
 						orders={ state.orders }
+						onOpen={ onOpen }
 					/>
 				) ) }
 			</div>

@@ -3,21 +3,24 @@ import { useCallback, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import Board from './components/Board';
+import OrderPanel from './components/OrderPanel';
 import useBoard from './hooks/useBoard';
 
+const statuses = window.okbData?.statuses || [];
 let noticeId = 0;
 
 export default function App() {
-	const { state, reload, moveOrder } = useBoard();
+	const { state, reload, moveOrder, updateOrder } = useBoard();
 	const [ notices, setNotices ] = useState( [] );
+	const [ openOrderId, setOpenOrderId ] = useState( null );
 
-	// Show a small message at the bottom (keeps the 3 newest).
 	const notify = useCallback( ( content, actions = [] ) => {
 		noticeId += 1;
 		setNotices( ( prev ) => [ ...prev.slice( -2 ), { id: `okb-${ noticeId }`, content, actions } ] );
 	}, [] );
 
-	const labelOf = ( status ) => state.columns[ status ]?.label || status;
+	const labelOf = ( status ) =>
+		state.columns[ status ]?.label || statuses.find( ( s ) => s.value === status )?.label || status;
 
 	const handleMove = async ( orderId, to ) => {
 		const number = state.orders[ orderId ]?.number;
@@ -36,8 +39,7 @@ export default function App() {
 				[
 					{
 						label: __( 'Undo', 'order-kanban-board' ),
-						onClick: () =>
-							moveOrder( orderId, result.from ).catch( ( error ) => notify( error.message ) ),
+						onClick: () => moveOrder( orderId, result.from ).catch( ( error ) => notify( error.message ) ),
 					},
 				]
 			);
@@ -47,6 +49,7 @@ export default function App() {
 	};
 
 	const hasBoard = state.columnOrder.length > 0;
+	const openOrder = openOrderId ? state.orders[ openOrderId ] : null;
 
 	return (
 		<div className="okb-app">
@@ -55,15 +58,24 @@ export default function App() {
 			{ state.loadState === 'error' && (
 				<Notice status="error" isDismissible={ false }>
 					<p>{ state.error?.message }</p>
-					<Button variant="secondary" onClick={ reload }>
-						{ __( 'Try again', 'order-kanban-board' ) }
-					</Button>
+					<Button variant="secondary" onClick={ reload }>{ __( 'Try again', 'order-kanban-board' ) }</Button>
 				</Notice>
 			) }
 
 			{ ! hasBoard && state.loadState === 'loading' && <Spinner /> }
 
-			{ hasBoard && <Board state={ state } onMove={ handleMove } /> }
+			{ hasBoard && <Board state={ state } onMove={ handleMove } onOpen={ setOpenOrderId } /> }
+
+			{ openOrder && (
+				<OrderPanel
+					orderId={ openOrder.id }
+					status={ openOrder.status }
+					statuses={ statuses }
+					onClose={ () => setOpenOrderId( null ) }
+					onMove={ handleMove }
+					onUpdate={ updateOrder }
+				/>
+			) }
 
 			<SnackbarList
 				className="okb-snackbars"

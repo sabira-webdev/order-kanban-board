@@ -1,29 +1,23 @@
 import { useDraggable } from '@dnd-kit/core';
-import { _n, sprintf } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 
 import { timeAgo } from '../utils/time';
 
-/**
- * What's inside a card. Used by the real card and by the drag preview.
- */
-function CardContent( { order } ) {
+const GripIcon = () => (
+	<svg width="12" height="18" viewBox="0 0 12 18" aria-hidden="true" focusable="false">
+		{ [ 3, 9, 15 ].map( ( y ) =>
+			[ 3, 9 ].map( ( x ) => <circle key={ `${ x }-${ y }` } cx={ x } cy={ y } r="1.6" /> )
+		) }
+	</svg>
+);
+
+function CardBody( { order } ) {
 	return (
 		<>
-			<div className="okb-card__head">
-				<a
-					className="okb-card__number"
-					href={ order.edit_url }
-					draggable={ false }
-				>
-					#{ order.number }
-				</a>
-			</div>
-
 			<div className="okb-card__body">
 				<p className="okb-card__customer">{ order.customer }</p>
 				<p className="okb-card__total">{ order.total }</p>
 			</div>
-
 			<div className="okb-card__meta">
 				<span>
 					{ sprintf(
@@ -32,42 +26,60 @@ function CardContent( { order } ) {
 						order.items
 					) }
 				</span>
-				{ order.date && (
-					<time dateTime={ order.date }>{ timeAgo( order.date ) }</time>
+				{ order.date && <time dateTime={ order.date }>{ timeAgo( order.date ) }</time> }
+				{ order.has_note && (
+					<span className="okb-card__flag">{ __( 'Customer note', 'order-kanban-board' ) }</span>
 				) }
 			</div>
+			{ order.shipping && <p className="okb-card__shipping">{ order.shipping }</p> }
 		</>
 	);
 }
 
-/**
- * The copy of the card that follows the mouse while dragging.
- */
 export function OrderCardPreview( { order } ) {
 	return (
 		<div className="okb-card is-overlay">
-			<CardContent order={ order } />
+			<div className="okb-card__head">
+				<span className="okb-card__number">#{ order.number }</span>
+			</div>
+			<CardBody order={ order } />
 		</div>
 	);
 }
 
 /**
- * A card you can drag to another column.
+ * Mouse/touch: drag anywhere on the card. Click: open the panel.
+ * Keyboard: focus the grip, Space to pick up, arrows to move, Space to drop.
  */
-export default function OrderCard( { order } ) {
-	const { attributes, listeners, setNodeRef, isDragging } = useDraggable( {
-		id: order.id,
-		data: { order },
-	} );
+export default function OrderCard( { order, onOpen } ) {
+	const { attributes, listeners, setNodeRef, isDragging } = useDraggable( { id: order.id } );
 
 	return (
 		<article
 			ref={ setNodeRef }
 			className={ isDragging ? 'okb-card is-dragging' : 'okb-card' }
-			{ ...attributes }
-			{ ...listeners }
+			onPointerDown={ listeners?.onPointerDown }
 		>
-			<CardContent order={ order } />
+			<div className="okb-card__head">
+				<button type="button" className="okb-card__open" onClick={ () => onOpen( order.id ) }>
+					<span className="screen-reader-text">{ __( 'Open order', 'order-kanban-board' ) }</span>
+					<span className="okb-card__number">#{ order.number }</span>
+				</button>
+				<button
+					type="button"
+					className="okb-card__handle"
+					{ ...attributes }
+					onKeyDown={ listeners?.onKeyDown }
+					aria-label={ sprintf(
+						/* translators: %s: order number */
+						__( 'Move order #%s', 'order-kanban-board' ),
+						order.number
+					) }
+				>
+					<GripIcon />
+				</button>
+			</div>
+			<CardBody order={ order } />
 		</article>
 	);
 }
