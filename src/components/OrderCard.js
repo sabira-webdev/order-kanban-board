@@ -1,12 +1,20 @@
+import { useDraggable } from '@dnd-kit/core';
 import { _n, sprintf } from '@wordpress/i18n';
 
 import { timeAgo } from '../utils/time';
 
-export default function OrderCard( { order } ) {
+/**
+ * What's inside a card. Used by the real card and by the drag preview.
+ */
+function CardContent( { order } ) {
 	return (
-		<article className="okb-card">
+		<>
 			<div className="okb-card__head">
-				<a className="okb-card__number" href={ order.edit_url }>
+				<a
+					className="okb-card__number"
+					href={ order.edit_url }
+					draggable={ false }
+				>
 					#{ order.number }
 				</a>
 			</div>
@@ -28,6 +36,38 @@ export default function OrderCard( { order } ) {
 					<time dateTime={ order.date }>{ timeAgo( order.date ) }</time>
 				) }
 			</div>
+		</>
+	);
+}
+
+/**
+ * The copy of the card that follows the mouse while dragging.
+ */
+export function OrderCardPreview( { order } ) {
+	return (
+		<div className="okb-card is-overlay">
+			<CardContent order={ order } />
+		</div>
+	);
+}
+
+/**
+ * A card you can drag to another column.
+ */
+export default function OrderCard( { order } ) {
+	const { attributes, listeners, setNodeRef, isDragging } = useDraggable( {
+		id: order.id,
+		data: { order },
+	} );
+
+	return (
+		<article
+			ref={ setNodeRef }
+			className={ isDragging ? 'okb-card is-dragging' : 'okb-card' }
+			{ ...attributes }
+			{ ...listeners }
+		>
+			<CardContent order={ order } />
 		</article>
 	);
 }

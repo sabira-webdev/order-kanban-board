@@ -152,3 +152,63 @@
 		font-size: 12px;
 	}
 }
+
+.okb-board.is-saving {
+	opacity: 0.6;
+	pointer-events: none;
+	transition: opacity 0.15s;
+}
+
+.okb-column {
+	transition: background-color 0.12s;
+
+	// Highlight the column under the dragged card.
+	&.is-over {
+		background: #dcdde0;
+		background: color-mix(in srgb, var(--okb-status) 14%, var(--okb-lane));
+	}
+}
+
+.okb-card {
+	cursor: grab;
+
+	// The original card fades while its copy is dragged.
+	&.is-dragging {
+		opacity: 0.35;
+		border-style: dashed;
+	}
+
+	// The floating copy that follows the pointer.
+	&.is-overlay {
+		cursor: grabbing;
+		transform: rotate(1.5deg);
+		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+		outline-offset: 2px;
+	}
+}
+
+// Keep the notches the same color as the highlighted column.
+.okb-column.is-over .okb-card__body::before,
+.okb-column.is-over .okb-card__body::after {
+	background: #dcdde0;
+	background: color-mix(in srgb, var(--okb-status) 14%, var(--okb-lane));
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.okb-card.is-overlay {
+		transform: none;
+	}
+}
+// Messages at the bottom right.
+.okb-snackbars {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 100001;
+	width: auto;
+	max-width: calc(100vw - 48px);
+}

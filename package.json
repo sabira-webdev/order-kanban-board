@@ -16,5 +16,8 @@
   "homepage": "https://github.com/sabira-webdev/order-kanban-board#readme",
   "devDependencies": {
     "@wordpress/scripts": "^35.0.0"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1"
   }
 }
