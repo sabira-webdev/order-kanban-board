@@ -11,9 +11,25 @@ defined( 'ABSPATH' ) || exit;
 
 class Board_Data {
 
-	const COLUMNS    = array( 'wc-on-hold', 'wc-processing', 'wc-packing', 'wc-ready-to-ship', 'wc-completed' );
-	const PER_COLUMN = 20;
 	const MAX_SEARCH = 100;
+
+	/**
+	 * @var Settings
+	 */
+	private $settings;
+
+	public function __construct( Settings $settings ) {
+		$this->settings = $settings;
+	}
+
+	/**
+	 * Status keys shown as columns, in order.
+	 *
+	 * @return string[]
+	 */
+	private function columns() {
+		return $this->settings->get()['columns'];
+	}
 
 	/**
 	 * All columns, or only the orders matching a search.
@@ -27,7 +43,7 @@ class Board_Data {
 		}
 
 		$columns = array();
-		foreach ( self::COLUMNS as $status ) {
+		foreach ( $this->columns() as $status ) {
 			$columns[] = $this->get_column( $status );
 		}
 		return array( 'columns' => $columns );
@@ -46,7 +62,7 @@ class Board_Data {
 			array(
 				'type'     => 'shop_order',
 				'status'   => array( $status ),
-				'limit'    => self::PER_COLUMN,
+				'limit'    => $this->settings->get()['per_column'],
 				'page'     => $page,
 				'paginate' => true,
 				'orderby'  => 'date',
@@ -57,7 +73,7 @@ class Board_Data {
 		return array(
 			'status'   => $status,
 			'label'    => wc_get_order_status_name( $status ),
-			'color'    => $this->status_color( $status ),
+			'color'    => $this->settings->status_color( $status ),
 			'total'    => (int) $result->total,
 			'page'     => $page,
 			'has_more' => $page < (int) $result->max_num_pages,
@@ -78,7 +94,7 @@ class Board_Data {
 		rsort( $ids );
 		$ids = array_slice( array_unique( $ids ), 0, self::MAX_SEARCH );
 
-		$grouped = array_fill_keys( self::COLUMNS, array() );
+		$grouped = array_fill_keys( $this->columns(), array() );
 
 		foreach ( $ids as $id ) {
 			$order = wc_get_order( $id );
@@ -108,7 +124,7 @@ class Board_Data {
 			$columns[] = array(
 				'status'   => $status,
 				'label'    => wc_get_order_status_name( $status ),
-				'color'    => $this->status_color( $status ),
+				'color'    => $this->settings->status_color( $status ),
 				'total'    => count( $orders ),
 				'page'     => 1,
 				'has_more' => false,
@@ -200,25 +216,6 @@ class Board_Data {
 				'notes'            => $notes,
 			)
 		);
-	}
-
-	private function status_color( $status ) {
-		$colors = apply_filters(
-			'okb_status_colors',
-			array(
-				'wc-pending'       => '#8c8f94',
-				'wc-on-hold'       => '#b26200',
-				'wc-processing'    => '#2271b1',
-				'wc-packing'       => '#7a4fb0',
-				'wc-ready-to-ship' => '#00838f',
-				'wc-completed'     => '#008a20',
-				'wc-cancelled'     => '#646970',
-				'wc-refunded'      => '#646970',
-				'wc-failed'        => '#d63638',
-			)
-		);
-
-		return isset( $colors[ $status ] ) ? sanitize_hex_color( $colors[ $status ] ) : '#8c8f94';
 	}
 
 	private function customer_name( $order ) {

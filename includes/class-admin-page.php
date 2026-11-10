@@ -20,9 +20,51 @@ class Admin_Page {
 	 */
 	private $hook_suffix = '';
 
+	/**
+	 * @var Settings
+	 */
+	private $settings;
+
+	public function __construct( Settings $settings ) {
+		$this->settings = $settings;
+	}
+
 	public function register() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ), 60 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
+		add_filter( 'plugin_action_links_' . plugin_basename( OKB_FILE ), array( $this, 'add_action_links' ) );
+	}
+
+	/**
+	 * "Open board" link on the Plugins screen.
+	 *
+	 * @param string[] $links Existing links.
+	 * @return string[]
+	 */
+	public function add_action_links( $links ) {
+		if ( current_user_can( 'edit_shop_orders' ) ) {
+			array_unshift(
+				$links,
+				sprintf(
+					'<a href="%s">%s</a>',
+					esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ),
+					esc_html__( 'Open board', 'order-kanban-board' )
+				)
+			);
+		}
+		return $links;
+	}
+
+	/**
+	 * WooCommerce's order list, for HPOS or the classic posts screen.
+	 *
+	 * @return string
+	 */
+	private function orders_url() {
+		$hpos = class_exists( \Automattic\WooCommerce\Utilities\OrderUtil::class )
+			&& \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+
+		return $hpos ? admin_url( 'admin.php?page=wc-orders' ) : admin_url( 'edit.php?post_type=shop_order' );
 	}
 
 	/**
@@ -77,20 +119,17 @@ class Admin_Page {
 			true
 		);
 
-		// All order statuses, for the status dropdown in the panel.
-		$statuses = array();
-		foreach ( wc_get_order_statuses() as $value => $label ) {
-			if ( 'wc-checkout-draft' !== $value ) {
-				$statuses[] = array(
-					'value' => $value,
-					'label' => $label,
-				);
-			}
-		}
+		$data = array(
+			'settings'  => $this->settings->get(),
+			// All order statuses, for the panel dropdown and the settings.
+			'statuses'  => $this->settings->all_statuses(),
+			'canManage' => current_user_can( 'manage_woocommerce' ),
+			'ordersUrl' => $this->orders_url(),
+		);
 
 		wp_add_inline_script(
 			'okb-board',
-			'window.okbData = ' . wp_json_encode( array( 'statuses' => $statuses ) ) . ';',
+			'window.okbData = ' . wp_json_encode( $data ) . ';',
 			'before'
 		);
 

@@ -22,8 +22,14 @@ class Rest_Controller {
 	 */
 	private $data;
 
-	public function __construct( Board_Data $data ) {
-		$this->data = $data;
+	/**
+	 * @var Settings
+	 */
+	private $settings;
+
+	public function __construct( Board_Data $data, Settings $settings ) {
+		$this->data     = $data;
+		$this->settings = $settings;
 	}
 
 	public function register() {
@@ -31,6 +37,43 @@ class Rest_Controller {
 	}
 
 	public function register_routes() {
+		register_rest_route(
+			self::ROUTE_NAMESPACE,
+			'/settings',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_settings' ),
+					'permission_callback' => array( $this, 'can_manage_orders' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'update_settings' ),
+					'permission_callback' => array( $this, 'can_manage_settings' ),
+					'args'                => array(
+						'columns'          => array(
+							'type'     => 'array',
+							'items'    => array( 'type' => 'string' ),
+							'minItems' => 1,
+							'maxItems' => Settings::MAX_COLUMNS,
+						),
+						'per_column'       => array(
+							'type' => 'integer',
+							'enum' => Settings::PER_COLUMN_CHOICES,
+						),
+						'poll_seconds'     => array(
+							'type' => 'integer',
+							'enum' => Settings::POLL_CHOICES,
+						),
+						'confirm_statuses' => array(
+							'type'  => 'array',
+							'items' => array( 'type' => 'string' ),
+						),
+					),
+				),
+			)
+		);
+
 		register_rest_route(
 			self::ROUTE_NAMESPACE,
 			'/board',
@@ -125,6 +168,31 @@ class Rest_Controller {
 
 	public function can_manage_orders() {
 		return current_user_can( 'edit_shop_orders' );
+	}
+
+	public function can_manage_settings() {
+		return current_user_can( 'manage_woocommerce' );
+	}
+
+	/**
+	 * GET /settings
+	 */
+	public function get_settings() {
+		return rest_ensure_response( $this->settings->get() );
+	}
+
+	/**
+	 * POST /settings. Only the keys that are sent are changed.
+	 */
+	public function update_settings( WP_REST_Request $request ) {
+		$values = array();
+		foreach ( array( 'columns', 'per_column', 'poll_seconds', 'confirm_statuses' ) as $key ) {
+			if ( $request->has_param( $key ) ) {
+				$values[ $key ] = $request[ $key ];
+			}
+		}
+
+		return rest_ensure_response( $this->settings->update( $values ) );
 	}
 
 	public function is_valid_status( $value ) {

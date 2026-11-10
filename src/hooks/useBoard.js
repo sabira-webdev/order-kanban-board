@@ -5,11 +5,16 @@ import { addQueryArgs } from '@wordpress/url';
 import boardReducer, { hasExtraPages, initialState } from '../store/boardReducer';
 import usePolling from './usePolling';
 
-const POLL_SECONDS = 60;
-
 const isAbort = ( error ) => error?.name === 'AbortError';
 
-export default function useBoard( { search = '' } = {} ) {
+/**
+ * Board data and actions.
+ *
+ * @param {Object} options
+ * @param {string} options.search      Search term ('' for the normal board).
+ * @param {number} options.pollSeconds Background refresh interval; 0 turns it off.
+ */
+export default function useBoard( { search = '', pollSeconds = 60 } = {} ) {
 	const [ state, dispatch ] = useReducer( boardReducer, initialState );
 	const [ loadingMore, setLoadingMore ] = useState( {} );
 
@@ -108,7 +113,7 @@ export default function useBoard( { search = '' } = {} ) {
 		load( { silent: true } );
 	}, [ load, search ] );
 
-	usePolling( poll, POLL_SECONDS );
+	usePolling( poll, pollSeconds );
 
 	/**
 	 * Move the card first, then save. Returns the old status (for Undo).

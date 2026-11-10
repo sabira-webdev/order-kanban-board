@@ -4,13 +4,18 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 
 import OrderCard from './OrderCard';
 
-// Orders per page; matches Board_Data::PER_COLUMN.
-const PAGE_SIZE = 20;
-
-export default function Column( { column, orders, onOpen, isSearching, isLoadingMore, onLoadMore } ) {
+export default function Column( {
+	column,
+	orders,
+	onOpen,
+	isSearching,
+	pageSize,
+	isLoadingMore,
+	onLoadMore,
+} ) {
 	const { setNodeRef, isOver } = useDroppable( { id: column.status } );
 	const headingId = `okb-column-${ column.status }`;
-	const nextCount = Math.min( PAGE_SIZE, column.total - column.orderIds.length );
+	const nextCount = Math.min( pageSize, column.total - column.orderIds.length );
 
 	return (
 		<section

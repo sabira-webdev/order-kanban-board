@@ -18,6 +18,7 @@ define( 'OKB_FILE', __FILE__ );
 define( 'OKB_PATH', plugin_dir_path( __FILE__ ) );
 define( 'OKB_URL', plugin_dir_url( __FILE__ ) );
 
+require_once OKB_PATH . 'includes/class-settings.php';
 require_once OKB_PATH . 'includes/class-order-statuses.php';
 require_once OKB_PATH . 'includes/class-admin-page.php';
 require_once OKB_PATH . 'includes/class-board-data.php';
@@ -41,10 +42,11 @@ add_action(
 			return;
 		}
 
-		$data = new \OKB\Board_Data();
+		$settings = new \OKB\Settings();
+		$data     = new \OKB\Board_Data( $settings );
 
 		( new \OKB\Order_Statuses() )->register();
-		( new \OKB\Admin_Page() )->register();
-		( new \OKB\Rest_Controller( $data ) )->register();
+		( new \OKB\Admin_Page( $settings ) )->register();
+		( new \OKB\Rest_Controller( $data, $settings ) )->register();
 	}
 );
