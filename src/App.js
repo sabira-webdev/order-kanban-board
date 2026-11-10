@@ -1,4 +1,4 @@
-import { Button, Notice, SnackbarList, Spinner } from '@wordpress/components';
+import { Button, Notice, Spinner } from '@wordpress/components';
 import { useCallback, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -7,6 +7,7 @@ import ConfirmMoveModal from './components/ConfirmMoveModal';
 import Header from './components/Header';
 import OrderPanel from './components/OrderPanel';
 import SettingsModal from './components/SettingsModal';
+import Toasts from './components/Toasts';
 import useBoard from './hooks/useBoard';
 import useDebouncedValue from './hooks/useDebouncedValue';
 
@@ -23,7 +24,7 @@ const defaultSettings = {
 	poll_seconds: 60,
 	confirm_statuses: [],
 };
-let noticeId = 0;
+let toastId = 0;
 
 export default function App() {
 	const [ settings, setSettings ] = useState( {
@@ -37,23 +38,45 @@ export default function App() {
 			search,
 			pollSeconds: settings.poll_seconds,
 		} );
-	const [ notices, setNotices ] = useState( [] );
+	const [ toasts, setToasts ] = useState( [] );
 	const [ openOrderId, setOpenOrderId ] = useState( null );
 	const [ pendingMove, setPendingMove ] = useState( null );
 	const [ isSettingsOpen, setIsSettingsOpen ] = useState( false );
 
-	const notify = useCallback( ( content, actions = [] ) => {
-		noticeId += 1;
-		setNotices( ( prev ) => [
+	/**
+	 * Show a toast. At most 3 are kept; the oldest goes first.
+	 *
+	 * @param {Object} toast { type, title, status?, action? }.
+	 */
+	const addToast = useCallback( ( toast ) => {
+		toastId += 1;
+		setToasts( ( prev ) => [
 			...prev.slice( -2 ),
-			{ id: `okb-${ noticeId }`, content, actions },
+			{ ...toast, id: `okb-toast-${ toastId }` },
 		] );
 	}, [] );
+
+	const dismissToast = useCallback( ( id ) => {
+		setToasts( ( prev ) => prev.filter( ( toast ) => toast.id !== id ) );
+	}, [] );
+
+	const showError = ( error, fallback ) =>
+		addToast( { type: 'error', title: error?.message || fallback } );
 
 	const labelOf = ( status ) =>
 		state.columns[ status ]?.label ||
 		statuses.find( ( s ) => s.value === status )?.label ||
 		status;
+
+	const colorOf = ( status ) =>
+		state.columns[ status ]?.color ||
+		statuses.find( ( s ) => s.value === status )?.color ||
+		'#8c8f94';
+
+	const getStatus = ( status ) => ( {
+		label: labelOf( status ),
+		color: colorOf( status ),
+	} );
 
 	const handleMove = async ( orderId, to ) => {
 		const number = state.orders[ orderId ]?.number;
@@ -62,30 +85,36 @@ export default function App() {
 			if ( ! result ) {
 				return;
 			}
-			notify(
-				sprintf(
-					/* translators: 1: order number, 2: status name */
-					__( 'Order #%1$s moved to %2$s.', 'order-kanban-board' ),
-					number,
-					labelOf( to )
+			addToast( {
+				type: 'success',
+				title: sprintf(
+					/* translators: %s: order number. Keep <status />: it is replaced by the status name. */
+					__( 'Order #%s moved to <status />', 'order-kanban-board' ),
+					number
 				),
-				[
-					{
-						label: __( 'Undo', 'order-kanban-board' ),
-						onClick: () =>
-							moveOrder( orderId, result.from ).catch(
-								( error ) => notify( error.message )
-							),
-					},
-				]
-			);
+				status: to,
+				action: {
+					label: __( 'Undo', 'order-kanban-board' ),
+					onClick: () =>
+						moveOrder( orderId, result.from ).catch( ( error ) =>
+							showError(
+								error,
+								__(
+									'The move could not be undone. Try again.',
+									'order-kanban-board'
+								)
+							)
+						),
+				},
+			} );
 		} catch ( error ) {
-			notify(
-				error.message ||
-					__(
-						'The order could not be moved. Try again.',
-						'order-kanban-board'
-					)
+			// Includes conflicts: the server's message explains what changed.
+			showError(
+				error,
+				__(
+					'The order could not be moved. Try again.',
+					'order-kanban-board'
+				)
 			);
 		}
 	};
@@ -122,12 +151,12 @@ export default function App() {
 
 	const handleLoadMore = ( status ) => {
 		loadMore( status ).catch( ( error ) =>
-			notify(
-				error.message ||
-					__(
-						'More orders could not be loaded. Try again.',
-						'order-kanban-board'
-					)
+			showError(
+				error,
+				__(
+					'More orders could not be loaded. Try again.',
+					'order-kanban-board'
+				)
 			)
 		);
 	};
@@ -135,7 +164,10 @@ export default function App() {
 	const handleSettingsSaved = ( saved ) => {
 		setSettings( saved );
 		setIsSettingsOpen( false );
-		notify( __( 'Board settings saved.', 'order-kanban-board' ) );
+		addToast( {
+			type: 'info',
+			title: __( 'Board settings saved.', 'order-kanban-board' ),
+		} );
 		reload();
 	};
 
@@ -216,14 +248,10 @@ export default function App() {
 				/>
 			) }
 
-			<SnackbarList
-				className="okb-snackbars"
-				notices={ notices }
-				onRemove={ ( id ) =>
-					setNotices( ( prev ) =>
-						prev.filter( ( n ) => n.id !== id )
-					)
-				}
+			<Toasts
+				toasts={ toasts }
+				getStatus={ getStatus }
+				onDismiss={ dismissToast }
 			/>
 		</div>
 	);

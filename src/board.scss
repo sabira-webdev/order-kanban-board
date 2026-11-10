@@ -5,7 +5,8 @@
 	--okb-muted: #50575e;
 	--okb-rule: #c3c4c7;
 	--okb-paper: #fff;
-	--okb-lane: #ececee;
+	--okb-lane: #f6f7f7;
+	--okb-lane-border: #e0e0e0;
 
 	margin-top: 12px;
 	color: var(--okb-ink);
@@ -18,6 +19,22 @@
 	}
 }
 
+// Small pill in the status color (column counts, toasts). The text is the
+// status color darkened so it stays readable (WCAG AA).
+@mixin okb-pill {
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: rgba(0, 0, 0, 0.06);
+	background: color-mix(in srgb, var(--okb-status, #8c8f94) 15%, transparent);
+	color: var(--okb-muted);
+	color: color-mix(in srgb, var(--okb-status, #8c8f94) 65%, #000);
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.5;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
 // Board: columns share the page width, scrolling sideways when too narrow.
 .okb-board {
 	display: flex;
@@ -27,15 +44,30 @@
 	padding-bottom: 16px;
 }
 
-// Columns are equal-height lanes with a colored bar inside the top.
+// Columns are equal-height lanes with a colored bar along the top.
 .okb-column {
+	position: relative;
 	display: flex;
 	flex: 1 1 0;
 	flex-direction: column;
 	min-width: 240px;
 	background: var(--okb-lane);
+	border: 1px solid var(--okb-lane-border);
 	border-radius: 8px;
-	box-shadow: inset 0 4px 0 var(--okb-status, #8c8f94);
+
+	// A straight 4px bar over the top border, rounded only at the outer
+	// corners. A pseudo-element (not overflow: hidden) so nothing gets clipped.
+	&::before {
+		content: "";
+		position: absolute;
+		top: -1px;
+		right: -1px;
+		left: -1px;
+		height: 4px;
+		border-radius: 8px 8px 0 0;
+		background: var(--okb-status, #8c8f94);
+		pointer-events: none;
+	}
 
 	&__header {
 		display: flex;
@@ -50,27 +82,20 @@
 		font-weight: 600;
 	}
 
-	// Count pill. Text is the status color darkened to stay readable (WCAG AA).
 	&__count {
-		padding: 2px 8px;
-		border-radius: 999px;
-		background: rgba(0, 0, 0, 0.06);
-		background: color-mix(in srgb, var(--okb-status, #8c8f94) 15%, transparent);
-		color: var(--okb-muted);
-		color: color-mix(in srgb, var(--okb-status, #8c8f94) 65%, #000);
-		font-size: 11px;
-		font-weight: 600;
-		line-height: 1.5;
-		font-variant-numeric: tabular-nums;
+
+		@include okb-pill;
 	}
 
+	// Fills the column (as tall as the tallest one), scrolls when taller
+	// than the screen, and keeps some height so empty columns are drop targets.
 	&__list {
 		display: flex;
 		flex: 1;
 		flex-direction: column;
 		gap: 10px;
-		min-height: calc(100vh - 300px);
-		max-height: calc(100vh - 260px);
+		min-height: 140px;
+		max-height: calc(100vh - 240px);
 		overflow-y: auto;
 		padding: 2px 10px 12px;
 		border-radius: 6px;
@@ -181,8 +206,8 @@
 
 	// Highlight the column under the dragged card, with a dashed drop target.
 	&.is-over {
-		background: #dcdde0;
-		background: color-mix(in srgb, var(--okb-status) 14%, var(--okb-lane));
+		background: #eaebec;
+		background: color-mix(in srgb, var(--okb-status) 10%, var(--okb-lane));
 	}
 
 	&.is-over .okb-column__list {
@@ -216,8 +241,8 @@
 // Keep the notches the same color as the highlighted column.
 .okb-column.is-over .okb-card__body::before,
 .okb-column.is-over .okb-card__body::after {
-	background: #dcdde0;
-	background: color-mix(in srgb, var(--okb-status) 14%, var(--okb-lane));
+	background: #eaebec;
+	background: color-mix(in srgb, var(--okb-status) 10%, var(--okb-lane));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -230,16 +255,6 @@
 	.okb-card.is-overlay {
 		transform: none;
 	}
-}
-
-// Messages at the bottom right.
-.okb-snackbars {
-	position: fixed;
-	right: 24px;
-	bottom: 24px;
-	z-index: 100001;
-	width: auto;
-	max-width: calc(100vw - 48px);
 }
 
 
@@ -512,9 +527,21 @@
 	}
 }
 
-// Header: search, last update and refresh ------------------------------------
+// Header: title on the left, toolbar on the right ----------------------------
 
-// Left: title, back link and search. Right: update time and buttons.
+$okb-control-border: #dcdcde;
+$okb-control-radius: 6px;
+$okb-control-size: 36px;
+
+// Soft focus ring: the theme color at 20%. The transparent outline still
+// shows in Windows high-contrast mode.
+@mixin okb-focus-ring {
+	border-color: var(--wp-admin-theme-color, #2271b1);
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.2);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--wp-admin-theme-color, #2271b1) 20%, transparent);
+	outline: 2px solid transparent;
+}
+
 .okb-header {
 	display: flex;
 	flex-wrap: wrap;
@@ -523,47 +550,140 @@
 	gap: 12px 24px;
 	margin-bottom: 20px;
 
-	// Search sits next to the title on wide screens, under it on small ones.
-	&__main {
+	&__title-row {
 		display: flex;
-		flex-direction: column;
-		align-items: stretch;
-		gap: 12px;
-		min-width: 0;
-
-		@media (min-width: 783px) {
-			flex-direction: row;
-			align-items: center;
-			gap: 24px;
-		}
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px 16px;
 	}
 
-	&__title-group {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-
-	&__back {
-		align-self: flex-start;
-		font-size: 12px;
-	}
-
-	&__search {
-		width: 280px;
-		max-width: 100%;
-	}
-
-	&__actions {
+	&__toolbar {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 	}
 
-	&__updated {
-		margin-right: 4px;
-		color: var(--okb-muted);
-		font-size: 12px;
+	// Under 782px the toolbar wraps below the title; search gets its own row.
+	@media (max-width: 782px) {
+
+		&__toolbar {
+			flex: 1 1 100%;
+			flex-wrap: wrap;
+			justify-content: flex-end;
+		}
+
+		.okb-header__search {
+			flex: 1 1 100%;
+			width: auto;
+		}
+	}
+}
+
+// Search field. Styles both SearchControl versions: the newer one built on
+// InputControl (container + backdrop) and the older plain input.
+.okb-header__search {
+	width: 260px;
+	max-width: 100%;
+
+	svg {
+		fill: #8c8f94;
+	}
+
+	input[type="search"] {
+		font-size: 13px;
+
+		&::placeholder {
+			color: #757575;
+		}
+	}
+
+	// Newer markup.
+	.components-input-control__container {
+		border-radius: $okb-control-radius;
+		background: #fff;
+	}
+
+	.components-input-control__input {
+		height: $okb-control-size;
+		min-height: $okb-control-size;
+	}
+
+	.components-input-control__backdrop {
+		border: 1px solid $okb-control-border;
+		border-radius: $okb-control-radius;
+		box-shadow: none;
+	}
+
+	.components-input-control__container:focus-within .components-input-control__backdrop {
+
+		@include okb-focus-ring;
+	}
+
+	// Older markup (search icon on the right).
+	input[type="search"].components-search-control__input {
+		height: $okb-control-size;
+		padding: 0 36px 0 12px;
+		border: 1px solid $okb-control-border;
+		border-radius: $okb-control-radius;
+		background: #fff;
+
+		&:focus {
+
+			@include okb-focus-ring;
+		}
+	}
+}
+
+// Refresh and settings: matching square icon buttons.
+.okb-header .okb-icon-button.components-button {
+	justify-content: center;
+	width: $okb-control-size;
+	min-width: $okb-control-size;
+	height: $okb-control-size;
+	padding: 0;
+	border: 1px solid $okb-control-border;
+	border-radius: $okb-control-radius;
+	background: #fff;
+	box-shadow: none;
+	color: #50575e;
+
+	&:hover:not(:disabled) {
+		border-color: #a7aaad;
+		background: #fff;
+		color: #1e1e1e;
+	}
+
+	// No ring for mouse clicks, only for keyboard focus.
+	&:focus:not(:disabled) {
+		box-shadow: none;
+	}
+
+	&:focus-visible:not(:disabled) {
+
+		@include okb-focus-ring;
+	}
+
+	// Refresh is disabled while loading; keep the spinning icon fully visible.
+	&.is-spinning:disabled {
+		opacity: 1;
+	}
+
+	&.is-spinning .dashicon {
+		animation: okb-spin 1s linear infinite;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+
+		&.is-spinning .dashicon {
+			animation: none;
+		}
+	}
+}
+
+@keyframes okb-spin {
+
+	to {
+		transform: rotate(360deg);
 	}
 }
 
@@ -638,4 +758,185 @@
 	justify-content: flex-end;
 	gap: 8px;
 	margin-top: 24px;
+}
+
+// View switcher: List (WooCommerce order list) | Board -----------------------
+
+.okb-view-switch {
+	display: inline-flex;
+	align-items: stretch;
+	gap: 2px;
+	box-sizing: border-box;
+	height: 32px;
+	padding: 2px;
+	border: 1px solid $okb-control-border;
+	border-radius: $okb-control-radius;
+	background: #fff;
+
+	&__option {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 0 12px;
+		border-radius: 4px;
+		color: #50575e;
+		font-size: 13px;
+		line-height: 1;
+		text-decoration: none;
+
+		.dashicons {
+			width: 16px;
+			height: 16px;
+			font-size: 16px;
+		}
+
+		&.is-active {
+			background: #f0f0f1;
+			color: #1e1e1e;
+			font-weight: 600;
+		}
+	}
+
+	a.okb-view-switch__option {
+
+		&:hover {
+			color: #1e1e1e;
+		}
+
+		// Replace WordPress's default link focus style with the soft ring.
+		&:focus {
+			box-shadow: none;
+			outline: none;
+		}
+
+		&:focus-visible {
+
+			@include okb-focus-ring;
+		}
+	}
+}
+
+// Toasts ---------------------------------------------------------------------
+
+.okb-toasts {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 100001;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 360px;
+	max-width: calc(100vw - 48px);
+}
+
+.okb-toast {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	overflow: hidden;
+	padding: 12px 12px 12px 16px;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	background: #fff;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+	color: var(--okb-ink);
+	animation: okb-toast-in 0.15s ease-out;
+
+	// Colored bar on the left.
+	&::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: 4px;
+		background: var(--okb-toast-color);
+	}
+
+	&__icon {
+		flex: none;
+		width: 20px;
+		height: 20px;
+		color: var(--okb-toast-color);
+		font-size: 20px;
+	}
+
+	&__text {
+		flex: 1;
+		min-width: 0;
+		margin: 0;
+		font-size: 13px;
+		line-height: 1.5;
+	}
+
+	&__status {
+		display: inline-block;
+		margin-left: 2px;
+
+		@include okb-pill;
+	}
+
+	&__actions {
+		display: flex;
+		flex: none;
+		align-items: center;
+		gap: 2px;
+	}
+
+	.components-button.okb-toast__action {
+		color: var(--wp-admin-theme-color, #2271b1);
+		font-weight: 600;
+	}
+
+	.components-button.okb-toast__close {
+		color: #50575e;
+
+		&:hover {
+			color: #1e1e1e;
+		}
+	}
+
+	// Shrinks from full width to nothing; when it ends, the toast closes.
+	&__progress {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		height: 2px;
+		background: var(--okb-toast-color);
+		transform-origin: left center;
+		animation: okb-toast-progress var(--okb-toast-duration, 6s) linear forwards;
+	}
+
+	&.is-paused &__progress {
+		animation-play-state: paused;
+	}
+}
+
+@keyframes okb-toast-in {
+
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+}
+
+@keyframes okb-toast-progress {
+
+	from {
+		transform: scaleX(1);
+	}
+
+	to {
+		transform: scaleX(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.okb-toast {
+		animation: none;
+	}
 }
